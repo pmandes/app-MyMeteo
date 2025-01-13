@@ -1,0 +1,122 @@
+{
+  "string": [
+
+    {
+      "name": "time",
+      "value": "Time: %s"
+    },
+    {
+      "name": "interval",
+      "value": "Interva: %s"
+    },
+    {
+      "name": "temperature_2m",
+      "value": "Temperature: %s"
+    },
+    {
+      "name": "humidity",
+      "value": "Humidity"
+    },
+    {
+      "name": "relative_humidity_2m",
+      "value": "Relative: %s"
+    },
+    {
+      "name": "apparent_temperature",
+      "value": "Apparent Temperature: %s"
+    },
+    {
+      "name": "is_day",
+      "value": "Is Day: %s"
+    },
+    {
+      "name": "precipitation",
+      "value": "Precipitation: %s"
+    },
+    {
+      "name": "rain",
+      "value": "Rain: %s"
+    },
+    {
+      "name": "showers",
+      "value": "Showers: %s"
+    },
+    {
+      "name": "snowfall",
+      "value": "Snowfall: %s"
+    },
+    {
+      "name": "weather_code",
+      "value": "Weather Code: %s"
+    },
+    {
+      "name": "cloud_cover",
+      "value": "Cloud Cover: %s"
+    },
+    {
+      "name": "pressure",
+      "value": "Pressure"
+    },
+    {
+      "name": "pressure_msl",
+      "value": "Pressure MSL: %s"
+    },
+    {
+      "name": "surface_pressure",
+      "value": "Surface Pressure: %s"
+    },
+    {
+      "name": "wind",
+      "value": "Wind"
+    },
+    {
+      "name": "wind_speed_10m",
+      "value": "Speed: %s"
+    },
+    {
+      "name": "wind_direction_10m",
+      "value": "Direction: %s"
+    },
+    {
+      "name": "wind_gusts_10m",
+      "value": "Gusts: %s"
+    },
+
+    {
+      "name": "module_desc",
+      "value": "This module template implements Category functions."
+    },
+    {
+      "name": "ability_desc",
+      "value": "This ability loads CategoryPage."
+    },
+    {
+      "name": "ability_label",
+      "value": "Category Ability"
+    },
+    {
+      "name": "list_item_text",
+      "value": "Category %d"
+    },
+    {
+      "name": "tab_text",
+      "value": "Tab"
+    },
+    {
+      "name": "detail_list_item_text",
+      "value": "Subtype"
+    },
+    {
+      "name": "grid_item_text",
+      "value": "Subclass"
+    },
+    {
+      "name": "sub_title",
+      "value": "Sub title"
+    },
+    {
+      "name": "title",
+      "value": "Category"
+    }
+  ]
+}

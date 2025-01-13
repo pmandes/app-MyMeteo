@@ -1,0 +1,48 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "material": {
+          "certpath": "C:\\Users\\P00925477\\.ohos\\config\\openharmony\\auto_ohos_default_MyWeather_com.example.myweather.cer",
+          "storePassword": "0000001B47B45EF2325207C200FA3EDC71341944EF7AB5DD45B40D4A49C09A0C532CD8F2AC7780ED7F8963",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001BCB0CB72A9D84BF10ECE7CEDB8D46BF124DE910DD196BF39B7CB469465D081A36FEBAC070FFA124",
+          "profile": "C:\\Users\\P00925477\\.ohos\\config\\openharmony\\auto_ohos_default_MyWeather_com.example.myweather.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\P00925477\\.ohos\\config\\openharmony\\auto_ohos_default_MyWeather_com.example.myweather.p12"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compatibleSdkVersion": "4.0.0(10)",
+        "runtimeOS": "HarmonyOS"
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug",
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
