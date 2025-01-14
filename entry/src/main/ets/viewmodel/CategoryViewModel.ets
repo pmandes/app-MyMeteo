@@ -1,6 +1,7 @@
 import hilog from '@ohos.hilog';
 import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
 import { WeatherAPIService } from '../net/WeatherAPIService';
+import { MapBoxAPIService } from '../net/MapBoxAPIService';
 
 export class CategoryViewModel {
 
@@ -62,7 +63,7 @@ export class CategoryViewModel {
   }
 
   getMapImage(city: City): string {
-    const apiService = new WeatherAPIService();
+    const apiService = new MapBoxAPIService();
     apiService.getMapImageUrl(city.lon, city.lat, 4.5);
     return "";
   }
