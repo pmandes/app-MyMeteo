@@ -13,7 +13,7 @@ export enum ViewState {
 
 @Entry
 @Component
-struct CategoryPage {
+struct Index {
 
   @State viewState: ViewState = ViewState.IDLE;
   @State cities: City[] = [];

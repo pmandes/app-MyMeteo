@@ -2,8 +2,8 @@
 @Component
 export struct WeatherIcon {
 
-  @Prop weatherCode?: number;
-  @Prop isDay?: boolean = true;
+  @Prop weatherCode: number;
+  @Prop isDay: boolean = true;
 
   build() {
 

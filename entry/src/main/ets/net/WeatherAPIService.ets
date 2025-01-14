@@ -1,5 +1,5 @@
-import { http } from '@kit.NetworkKit';
-import { image } from '@kit.ImageKit';
+import http from '@ohos.net.http';
+import image from '@ohos.multimedia.image';
 import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
 
 export class WeatherAPIService {
@@ -17,8 +17,11 @@ export class WeatherAPIService {
     return new Promise((resolve, reject) => {
 
       const httpRequest = http.createHttp();
+      const url = this.API_SEARCH_URL.replace('{city}', encodeURIComponent(query));
 
-      httpRequest.request(this.API_SEARCH_URL.replace('{city}', encodeURIComponent(query)), {
+      console.warn('URL: ', url)
+
+      httpRequest.request(url, {
         method: http.RequestMethod.GET,
         header: {
           'Content-Type': 'application/json'
@@ -34,6 +37,7 @@ export class WeatherAPIService {
 
         try {
           console.info('code:' + data.responseCode);
+          console.info('data: ', JSON.stringify(data))
 
           const response: Array<City> = JSON.parse(data.result as string);
 

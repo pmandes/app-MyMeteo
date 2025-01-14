@@ -1,6 +1,6 @@
 import { City } from '../../model/WeatherModel';
 import { CoordinateType, toDMS } from '../../common/CoordinatesConverter';
-import { curves } from '@kit.ArkUI';
+import curves from '@ohos.curves';
 
 @Component
 export struct CityInfoItem {

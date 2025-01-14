@@ -5,8 +5,8 @@ import { City, CurrentWeather, Current, CurrentUnits, Forecast } from '../model/
 
 @Component
 export struct CurrentWeatherComponent {
-  @Prop city?: City
-  @Prop currentWeather?: CurrentWeather
+  @Prop city: City
+  @Prop currentWeather: CurrentWeather
   current?: Current = this.currentWeather?.current;
   units?: CurrentUnits = this.currentWeather?.current_units;
 
