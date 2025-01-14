@@ -127,7 +127,7 @@ export class CommonConstants {
    * Therefore, you need to define constants. The default prompt in the search box does not support
    * internationalization.
    */
-  static readonly SEARCH_PLACEHOLDER: string = 'Search...';
+  static readonly SEARCH_PLACEHOLDER: string = 'Type to search...';
 
   /**
    * Search font family.

@@ -5,7 +5,8 @@ import { WeatherAPIService } from '../net/WeatherAPIService';
 export class CategoryViewModel {
 
   async searchCity(query: string): Promise<City[]> {
-    hilog.info(0x0000, 'CategoryViewModel', '%{public}s %{public}s ', 'Search: ', query);
+
+      console.error('searchCity: ', query)
 
       const apiService = new WeatherAPIService();
 

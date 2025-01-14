@@ -1,7 +1,5 @@
-import hilog from '@ohos.hilog';
-
 import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
-import { ViewState } from '../pages/CategoryPage';
+import { ViewState } from '../pages/Index';
 import CategoryViewModel from '../viewmodel/CategoryViewModel';
 import { CityInfoItem } from './ui/CityInfoItem';
 

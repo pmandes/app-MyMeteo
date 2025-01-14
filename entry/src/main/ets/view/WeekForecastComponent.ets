@@ -3,7 +3,7 @@ import { Forecast } from '../model/WeatherModel';
 
 @Component
 export struct WeekForecastComponent {
-  @Prop forecast?: Forecast
+  @Prop forecast: Forecast
 
   build() {
 

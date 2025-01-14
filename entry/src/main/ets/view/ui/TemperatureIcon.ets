@@ -6,7 +6,7 @@ export function inRange(value: number, min: number, max: number): boolean {
 @Component
 export struct TemperatureIcon {
 
-  @Prop temp?: number;
+  @Prop temp: number;
 
   build() {
 
