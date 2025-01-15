@@ -3,10 +3,13 @@ import { ResultsComponent } from '../view/ResultsComponent';
 import { CityDetailsComponent } from '../view/CityDetailsComponent';
 import { LoadingComponent } from '../view/ui/LoadingComponent';
 import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
+import { AppError } from '../common/AppError';
+import { ErrorComponent } from '../view/ui/ErrorComponent';
 
 export enum ViewState {
   IDLE,
   LOADING,
+  ERROR,
   SHOW_RESULTS,
   SHOW_CITY
 }
@@ -20,6 +23,7 @@ struct Index {
   @State selectedCity?: City = undefined;
   @State currentWeather?: CurrentWeather = undefined;
   @State forecast?: Forecast = undefined;
+  @State error?: AppError = undefined;
 
   build() {
 
@@ -27,7 +31,8 @@ struct Index {
 
       SearchBarComponent({
         viewState: this.viewState,
-        cities: this.cities
+        cities: this.cities,
+        error: this.error
       }).margin({ top: 32 });
 
       if (this.viewState == ViewState.IDLE || this.viewState == ViewState.SHOW_RESULTS) {
@@ -53,6 +58,9 @@ struct Index {
 
         LoadingComponent();
 
+      } else if (this.viewState == ViewState.ERROR) {
+
+        ErrorComponent({ error: this.error });
       }
 
     }.margin( { bottom: 64  } ).padding( 16 )

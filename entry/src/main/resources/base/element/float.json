@@ -13,6 +13,10 @@
       "value": "40vp"
     },
     {
+      "name": "error_box_radius",
+      "value": "10vp"
+    },
+    {
       "name": "title_height",
       "value": "56vp"
     },
