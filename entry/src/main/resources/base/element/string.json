@@ -1,6 +1,9 @@
 {
   "string": [
-
+    {
+      "name": "app_name",
+      "value": "MyMeteo"
+    },
     {
       "name": "time",
       "value": "Time: %s"
@@ -81,7 +84,6 @@
       "name": "wind_gusts_10m",
       "value": "Gusts: %s"
     },
-
     {
       "name": "module_desc",
       "value": "This module template implements Category functions."
@@ -117,6 +119,10 @@
     {
       "name": "title",
       "value": "Category"
+    },
+    {
+      "name": "no_weather_data",
+      "value": "No weather data..."
     }
   ]
 }

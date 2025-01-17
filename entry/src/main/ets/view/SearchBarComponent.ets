@@ -7,12 +7,16 @@ import { AppError } from '../common/AppError';
 @Component
 export struct SearchBarComponent {
 
+  private static readonly SEARCH_DELAY_MS: number = 500;
+
   @Link cities: City[]
   @Link viewState: ViewState
   @Link error: AppError
   @State submitValue: string = ''
   @State changeValue: string = ''
   controller: SearchController = new SearchController()
+  lastSearchTime: number = 0
+  searchTimeout: number = 0
 
   build() {
 
@@ -20,7 +24,6 @@ export struct SearchBarComponent {
 
       Search({ value: this.changeValue, placeholder: CommonConstants.SEARCH_PLACEHOLDER, controller: this.controller })
         .enableKeyboardOnFocus(true)
-        .searchButton('SEARCH')
         .height($r('app.float.search_height'))
         .border({ radius: $r('app.float.search_radius') })
         .shadow(ShadowStyle.OUTER_DEFAULT_SM)
@@ -37,15 +40,31 @@ export struct SearchBarComponent {
           top: $r('app.float.search_margin_top'),
           bottom: $r('app.float.search_margin_bottom')
         })
-        .onChange((value: string) => {
-          console.debug('onChange: ', value);
-          this.changeValue = value;
-        })
+        .onChange((value: string) => this.handleOnChange(value))
         .onSubmit((value: string) => this.handleOnSubmit(value))
     }
   }
 
-  handleOnSubmit(value: string) {
+  handleOnChange(value: string): void {
+    this.changeValue = value;
+
+    if (value.trim().length < 3) {
+      return;
+    }
+
+    const currentTime = Date.now();
+    if (currentTime - this.lastSearchTime < SearchBarComponent.SEARCH_DELAY_MS) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => this.handleOnSubmit(value), SearchBarComponent.SEARCH_DELAY_MS);
+
+    } else {
+      this.handleOnSubmit(value);
+    }
+
+    this.lastSearchTime = currentTime;
+  }
+
+  handleOnSubmit(value: string): void {
 
     if (value.trim() === '') {
       return

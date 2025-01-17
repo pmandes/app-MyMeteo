@@ -39,24 +39,22 @@ export struct ResultsComponent {
 
             CityInfoItem({ city: item })
 
-          }.onClick(event => {
+          }.onClick(event => this.handleOnClick(item))
 
-            const cw = CategoryViewModel.getCurrentWeather(item)
-            const f = CategoryViewModel.getForecast(item)
-
-            this.selectedCity = item;
-
-            cw.then(currentWeather => {
-              this.currentWeather = currentWeather;
-            });
-
-            f.then(forecast => {
-              this.forecast = forecast;
-              this.viewState = ViewState.SHOW_CITY
-            });
-          })
         })
       }.height("90%").scrollBar(BarState.Off)
     }
+  }
+
+  handleOnClick(city: City) {
+
+    this.selectedCity = city;
+    const weatherData = CategoryViewModel.getWeatherData(city);
+
+    weatherData.then(data => {
+      this.currentWeather = data.currentWeather;
+      this.forecast = data.forecast;
+      this.viewState = ViewState.SHOW_CITY
+    });
   }
 }

@@ -116,3 +116,8 @@ export interface DailyUnits {
   shortwave_radiation_sum?:       string;
   et0_fao_evapotranspiration?:    string;
 }
+
+export interface WeatherData {
+  currentWeather: CurrentWeather | null;
+  forecast: Forecast | null;
+}
