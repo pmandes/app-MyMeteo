@@ -17,7 +17,10 @@ export struct CityDetailsComponent {
         Column() {
           if (this.city) {
             CurrentWeatherComponent({ city: this.city, currentWeather: this.currentWeather })
-            WeekForecastComponent({ forecast: this.forecast })
+
+            if (this.forecast)
+              WeekForecastComponent({ forecast: this.forecast })
+
             Blank(100)
           }
         }
