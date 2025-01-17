@@ -1,7 +1,5 @@
-import hilog from '@ohos.hilog';
-import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
+import { City, WeatherData } from '../model/WeatherModel';
 import { WeatherAPIService } from '../net/WeatherAPIService';
-import { MapBoxAPIService } from '../net/MapBoxAPIService';
 
 export class CategoryViewModel {
 
@@ -13,36 +11,30 @@ export class CategoryViewModel {
       return apiService.searchCity(query);
   }
 
-  async getCurrentWeather(city: City): Promise<CurrentWeather|null> {
+  async getWeatherData(city: City): Promise<WeatherData> {
+    console.info('getWeatherData: ', city);
 
     const apiService = new WeatherAPIService();
 
     try {
-      const currentWeather = apiService.getCurrentWeather(city.lat, city.lon);
-      return currentWeather;
 
+      const data = await Promise.all([
+        apiService.getCurrentWeather(city.lat, city.lon),
+        apiService.getForecast(city.lat, city.lon)
+      ]);
+
+      return {
+        currentWeather: data[0],
+        forecast: data[1]
+      };
     } catch (err) {
+      console.info('Get weather data error: ', err);
 
-      hilog.error(0x0000, 'CategoryViewModel', '%{public}s %{public}s ', 'Error: ',  JSON.stringify(err));
+      return {
+        currentWeather: null,
+        forecast: null
+      };
     }
-
-    return null;
-  }
-
-  async getForecast(city: City): Promise<Forecast|null> {
-
-    const apiService = new WeatherAPIService();
-
-    try {
-      const forecast = apiService.getForecast(city.lat, city.lon);
-      return forecast;
-
-    } catch (err) {
-
-      hilog.error(0x0000, 'CategoryViewModel', '%{public}s %{public}s ', 'Error: ',  JSON.stringify(err));
-    }
-
-    return null;
   }
 }
 
