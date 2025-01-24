@@ -1,4 +1,5 @@
 export interface City {
+  id?: number,
   name: string,
   display_name: string,
   lon: number,

@@ -40,7 +40,7 @@ export struct SearchBarComponent {
           top: $r('app.float.search_margin_top'),
           bottom: $r('app.float.search_margin_bottom')
         })
-        .onChange((value: string) => this.handleOnChange(value))
+        //.onChange((value: string) => this.handleOnChange(value))
         .onSubmit((value: string) => this.handleOnSubmit(value))
     }
   }

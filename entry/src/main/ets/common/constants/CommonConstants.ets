@@ -1,7 +1,9 @@
+
 /**
  * Common constants for all features.
  */
 export class CommonConstants {
+
   /**
    * Search weight.
    */

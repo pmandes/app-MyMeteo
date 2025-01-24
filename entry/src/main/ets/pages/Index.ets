@@ -33,7 +33,7 @@ struct Index {
         viewState: this.viewState,
         cities: this.cities,
         error: this.error
-      }).margin({ top: 32 });
+      }).margin({ top: 8 });
 
       if (this.viewState == ViewState.IDLE || this.viewState == ViewState.SHOW_RESULTS) {
 

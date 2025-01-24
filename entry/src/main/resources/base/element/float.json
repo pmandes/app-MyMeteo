@@ -94,11 +94,11 @@
     },
     {
       "name": "search_margin_top",
-      "value": "20vp"
+      "value": "8vp"
     },
     {
       "name": "search_margin_bottom",
-      "value": "8vp"
+      "value": "16vp"
     },
     {
       "name": "title_margin_top",
