@@ -1,7 +1,8 @@
 import { ViewState } from '../pages/Index';
-import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
+import { City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { CurrentWeatherComponent } from './CurrentWeatherComponent';
 import { WeekForecastComponent } from './WeekForecastComponent';
+import curves from '@ohos.curves';
 
 @Component
 export struct CityDetailsComponent {
@@ -11,6 +12,10 @@ export struct CityDetailsComponent {
   @Link currentWeather: CurrentWeather;
   @Link viewState: ViewState;
   @Link forecast: Forecast;
+
+  private effect: TransitionEffect =
+    TransitionEffect.OPACITY.animation({ curve: curves.springMotion(0.4, 0.8) })
+      .combine(TransitionEffect.move(TransitionEdge.END))
 
   build() {
       Scroll() {
@@ -27,5 +32,6 @@ export struct CityDetailsComponent {
       }.height("90%")
       .scrollBar(BarState.Off)
       .align(Alignment.Top)
+      .transition(this.effect)
   }
 }

@@ -2,9 +2,10 @@ import { SearchBarComponent } from '../view/SearchBarComponent';
 import { ResultsComponent } from '../view/ResultsComponent';
 import { CityDetailsComponent } from '../view/CityDetailsComponent';
 import { LoadingComponent } from '../view/ui/LoadingComponent';
-import { City, CurrentWeather, Forecast } from '../model/WeatherModel';
-import { AppError } from '../common/AppError';
+import { AppError, City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ErrorComponent } from '../view/ui/ErrorComponent';
+import { categoryViewModel, CategoryViewModel } from '../viewmodel/CategoryViewModel';
+
 
 export enum ViewState {
   IDLE,
@@ -18,12 +19,24 @@ export enum ViewState {
 @Component
 struct Index {
 
+  @State viewModel: CategoryViewModel = categoryViewModel;
+
   @State viewState: ViewState = ViewState.IDLE;
   @State cities: City[] = [];
+  @State savedCities: City[] = [];
   @State selectedCity?: City = undefined;
   @State currentWeather?: CurrentWeather = undefined;
   @State forecast?: Forecast = undefined;
   @State error?: AppError = undefined;
+
+  aboutToAppear(): void {
+    console.debug("Index page is about to appear...");
+    this.fetchSavedCities();
+  }
+
+  onPageShow(): void {
+    console.debug("Index page: onPageShow...");
+  }
 
   build() {
 
@@ -40,6 +53,7 @@ struct Index {
         ResultsComponent({
           viewState: this.viewState,
           results: this.cities,
+          savedCities: this.savedCities,
           selectedCity: this.selectedCity,
           currentWeather: this.currentWeather,
           forecast: this.forecast
@@ -69,5 +83,35 @@ struct Index {
       colors: [[$r('app.color.background_start'), 0.0], [$r('app.color.background_end'), 1.0]]
     })
     .height('100%')
+  }
+
+  onBackPress(): boolean | void {
+
+    console.warn("onBackPress");
+
+    if (this.viewState === ViewState.SHOW_CITY) {
+
+      if (this.cities.length > 0) {
+        this.viewState = ViewState.SHOW_RESULTS;
+      } else {
+        this.viewState = ViewState.IDLE;
+      }
+
+      return true;
+
+    } else if (this.viewState === ViewState.SHOW_RESULTS) {
+
+      this.fetchSavedCities();
+      this.viewState = ViewState.IDLE;
+
+      return true;
+
+    } else {
+      return false;
+    }
+  }
+
+  async fetchSavedCities() {
+    this.savedCities = await categoryViewModel.getSavedCities();
   }
 }

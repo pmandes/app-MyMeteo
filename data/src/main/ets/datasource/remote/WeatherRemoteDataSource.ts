@@ -1,0 +1,24 @@
+import { IWeatherRemoteDataSource } from './IWeatherRemoteDataSource';
+import { WeatherAPI } from '../../net/WeatherAPI';
+import { City, CurrentWeather, Forecast } from '../../net/dto/WeatherDTO';
+
+export class WeatherRemoteDataSource implements IWeatherRemoteDataSource {
+
+  private api: WeatherAPI;
+
+  constructor(weatherAPI: WeatherAPI) {
+    this.api = weatherAPI;
+  }
+
+  async searchCity(query: string): Promise<City[]> {
+    return this.api.searchCity(query);
+  }
+
+  async getCurrentWeather(cityId: number, latitude: number, longitude: number): Promise<CurrentWeather> {
+    return this.api.getCurrentWeather(cityId, latitude, longitude);
+  }
+
+  async getForecast(latitude: number, longitude: number): Promise<Forecast> {
+    return this.api.getForecast(latitude, longitude);
+  }
+}
