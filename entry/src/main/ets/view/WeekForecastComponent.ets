@@ -1,5 +1,5 @@
 import { ForecastDayItem } from './ui/ForecastDayItem';
-import { Forecast } from '../model/WeatherModel';
+import { Forecast } from '@mymeteo/data';
 
 @Component
 export struct WeekForecastComponent {

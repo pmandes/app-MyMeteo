@@ -1,7 +1,7 @@
 import { TemperatureIcon } from './ui/TemperatureIcon';
 import { WeatherIcon } from './ui/WeatherIcon';
 import { CoordinateType, toDMS } from '../common/CoordinatesConverter';
-import { City, CurrentWeather, Current, CurrentUnits } from '../model/WeatherModel';
+import { City, Current, CurrentUnits, CurrentWeather } from '@mymeteo/data';
 
 @Component
 export struct CurrentWeatherComponent {

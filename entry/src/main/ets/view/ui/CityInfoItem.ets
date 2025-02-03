@@ -1,4 +1,4 @@
-import { City } from '../../model/WeatherModel';
+import { City } from '@mymeteo/data';
 import { CoordinateType, toDMS } from '../../common/CoordinatesConverter';
 import curves from '@ohos.curves';
 
@@ -9,7 +9,7 @@ export struct CityInfoItem {
 
   private effect: TransitionEffect =
     // Apply the default opacity transition effect and specify springMotion (0.6, 0.8) as the curve.
-    TransitionEffect.OPACITY.animation({ curve: curves.springMotion(0.6, 0.8) })
+    TransitionEffect.OPACITY.animation({ curve: curves.springMotion(0.4, 0.8) })
       // Combine with a scale transition effect, whose animation settings follow TransitionEffect above, that is, springMotion(0.6, 0.8).
       //.combine(TransitionEffect.scale({ x: 0, y: 0 }))
         // Apply a rotation transition effect, whose animation settings follow TransitionEffect above, that is, springMotion(0.6, 0.8).
@@ -17,7 +17,7 @@ export struct CityInfoItem {
         // Apply a translation transition effect, whose animation settings are specified by animation, which is springMotion().
       //.combine(TransitionEffect.translate({ y: 150 }).animation({ curve: curves.springMotion() }))
         // Apply a movement transition effect, whose animation settings follow TransitionEffect above, that is, springMotion().
-      //.combine(TransitionEffect.move(TransitionEdge.END))
+      .combine(TransitionEffect.move(TransitionEdge.END))
 
   build() {
     Column() {
@@ -53,5 +53,6 @@ export struct CityInfoItem {
     .margin({top: 16})
     .width("100%")
     .transition(this.effect)
+
   }
 }

@@ -1,4 +1,4 @@
-import { AppError } from '../../common/AppError';
+import { AppError } from '@mymeteo/data';
 
 @Component
 export struct ErrorComponent {
