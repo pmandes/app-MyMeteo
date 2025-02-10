@@ -68,7 +68,7 @@ export class WeatherRepository {
     console.info(`[${LOG_TAG}] fetchAndSaveWeatherData -> fetching data from remote for cityId=${city.place_id}`);
 
     const [ currentWeather, forecast ] = await Promise.all([
-      this.remoteDataSource.getCurrentWeather(city.place_id, city.lat, city.lon),
+      this.remoteDataSource.getCurrentWeather(city.lat, city.lon),
       this.remoteDataSource.getForecast(city.lat, city.lon)
     ]);
 
@@ -166,7 +166,7 @@ export class WeatherRepository {
    */
   async getCurrentWeather(cityId: number, latitude: number, longitude: number): Promise<CurrentWeather> {
     console.info(`[${LOG_TAG}] getCurrentWeather -> cityId=${cityId}, lat=${latitude}, lon=${longitude}`);
-    return this.remoteDataSource.getCurrentWeather(cityId, latitude, longitude);
+    return this.remoteDataSource.getCurrentWeather(latitude, longitude);
   }
 
   /**

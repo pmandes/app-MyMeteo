@@ -1,0 +1,94 @@
+@startuml
+scale 1
+
+' Define the DbTable interface
+interface DbTable {
++ tableName: string
++ sqlCreate: string
++ columns: string[]
+  }
+
+' Define the DBConfig class
+class DBConfig {
++ STORE_CONFIG: StoreConfig
++ CITY_TABLE: DbTable
+  ...
+  }
+
+' Define the Entity interface
+interface Entity {
++ getTableName() : string
++ getTableColumns() : string[]
+  }
+
+' Define the BaseEntity abstract class that implements Entity
+abstract class BaseEntity {
+- static TABLE: DbTable
++ getTableName() : string
++ getTableColumns() : string[]
+  }
+  BaseEntity ..|> Entity
+
+' Define the CityEntity class that extends BaseEntity
+class CityEntity {
++ cityId: number
++ cityName: string
++ cityDisplayName: string
++ latitude: number
++ longitude: number
++ lastUpdate: Date
++ CityEntity(id: number, name: string, displayName: string, latitude: number, longitude: number, lastUpdate: Date)
+  }
+  CityEntity --|> BaseEntity
+
+' Define the BaseRelationalDatabase abstract class
+abstract class BaseRelationalDatabase {
+- rdbStore: RdbStore
++ insert<T>()
++ query<T>()
++ update<T>()
++ delete<T>()
+  }
+
+' Define the MyMeteoDB class that extends BaseRelationalDatabase (Singleton)
+class MyMeteoDB {
+- static instance: MyMeteoDB
++ getInstance(context: Context) : Promise<MyMeteoDB>
++ initializeTables(store: RdbStore) : Promise<void>
+  }
+  MyMeteoDB --|> BaseRelationalDatabase
+
+' Define the ICityDAO interface
+interface ICityDAO {
++ getAllCities() : Promise<City[]>
++ insertCity(city: City) : Promise<number>
++ updateCity(city: City) : Promise<number>
++ deleteCity(city: City) : Promise<number>
++ getCityById(cityId: number) : Promise<City[]>
+  }
+
+' Define the CityDAORdb class that implements ICityDAO
+class CityDAORdb {
+- db: BaseRelationalDatabase
++ getAllCities() : Promise<City[]>
++ insertCity(city: City) : Promise<number>
++ updateCity(city: City) : Promise<number>
++ deleteCity(city: City) : Promise<number>
++ getCityById(cityId: number) : Promise<City[]>
+  }
+  CityDAORdb ..|> ICityDAO
+
+' Define a class for Mapper Functions (as a container for functions)
+class MapperFunctions {
++ cityToEntity(city: City) : CityEntity
++ entityToCity(entity: CityEntity) : City
++ entityToRecord(entity: CityEntity) : ValuesBucket
++ resultSetToCities(resultSet: ResultSet) : City[]
+  }
+
+' Define associations
+DBConfig ..> DbTable : uses
+CityDAORdb ..> BaseRelationalDatabase : uses
+CityDAORdb ..> CityEntity : uses
+CityDAORdb ..> MapperFunctions : uses
+@enduml

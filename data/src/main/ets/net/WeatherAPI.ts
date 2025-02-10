@@ -34,7 +34,7 @@ export class WeatherAPI {
    * @param {number} longitude - The longitude coordinate of the location.
    * @returns {Promise<CurrentWeather>} A promise that resolves to the current weather data.
    */
-  async getCurrentWeather(cityId: number, latitude: number, longitude: number): Promise<CurrentWeather> {
+  async getCurrentWeather(latitude: number, longitude: number): Promise<CurrentWeather> {
     const url = this.API_CURRENT_WEATHER_URL
       .replace('{latitude}', latitude.toString())
       .replace('{longitude}', longitude.toString());
