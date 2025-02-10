@@ -1,0 +1,93 @@
+@startuml
+' Define interfaces for data sources
+interface IWeatherRemoteDataSource {
+  + searchCity(query: string): Promise<City[]>
+  + getCurrentWeather(latitude: number, longitude: number): Promise<CurrentWeather>
+  + getForecast(latitude: number, longitude: number): Promise<Forecast>
+}
+
+interface IWeatherLocalDataSource {
+  + saveCity(city: City): Promise<number>
+  + getAllCities(): Promise<City[]>
+  + saveWeatherData(cityId: number, currentWeather: CurrentWeather, forecast: Forecast, lastUpdate: Date): Promise<void>
+  + getWeatherData(cityId: number): Promise<WeatherData>
+}
+
+' Define DAO interfaces (local data access)
+interface ICityDAO { }
+interface IWeatherDAO { }
+interface IForecastDAO { }
+
+' Define the WeatherRepository class
+class WeatherRepository {
+  - remoteDataSource: IWeatherRemoteDataSource
+  - localDataSource: IWeatherLocalDataSource
+  + WeatherRepository(remoteDataSource: IWeatherRemoteDataSource, localDataSource: IWeatherLocalDataSource)
+  + getWeatherData(city: City): Promise<WeatherData>
+  - fetchAndSaveWeatherData(city: City): Promise<WeatherData>
+  - isDataObsolete(lastUpdated: Date): boolean
+}
+
+' Define concrete implementations for remote and local data sources
+class WeatherRemoteDataSource {
+  - api: WeatherAPI
+  + WeatherRemoteDataSource(weatherAPI: WeatherAPI)
+  + searchCity(query: string): Promise<City[]>
+  + getCurrentWeather(latitude: number, longitude: number): Promise<CurrentWeather>
+  + getForecast(latitude: number, longitude: number): Promise<Forecast>
+}
+WeatherRemoteDataSource ..|> IWeatherRemoteDataSource
+
+class WeatherLocalDataSource {
+  - cityDAO: ICityDAO
+  - weatherDAO: IWeatherDAO
+  - forecastDAO: IForecastDAO
+  + WeatherLocalDataSource(cityDAO: ICityDAO, weatherDAO: IWeatherDAO, forecastDAO: IForecastDAO)
+  + saveCity(city: City): Promise<number>
+  + getAllCities(): Promise<City[]>
+  + saveWeatherData(cityId: number, currentWeather: CurrentWeather, forecast: Forecast, lastUpdate: Date): Promise<void>
+  + getWeatherData(cityId: number): Promise<WeatherData>
+}
+WeatherLocalDataSource ..|> IWeatherLocalDataSource
+
+' Define dependency for WeatherRepository
+WeatherRepository --> IWeatherRemoteDataSource : uses
+WeatherRepository --> IWeatherLocalDataSource : uses
+
+' Define supporting classes for remote API and DTOs
+class WeatherAPI {
+  + searchCity(query: string): Promise<City[]>
+  + getCurrentWeather(latitude: number, longitude: number): Promise<CurrentWeather>
+  + getForecast(latitude: number, longitude: number): Promise<Forecast>
+}
+
+class City {
+  + place_id: number
+  + name: string
+  + display_name: string
+  + lat: number
+  + lon: number
+  + last_update: Date
+}
+
+class CurrentWeather {
+  ' Weather properties...
+}
+
+class Forecast {
+  ' Forecast properties...
+}
+
+class WeatherData {
+  + currentWeather: CurrentWeather
+  + forecast: Forecast
+  + lastUpdated: Date
+}
+
+' Associations
+WeatherRemoteDataSource --> WeatherAPI : uses
+WeatherLocalDataSource --> ICityDAO : uses
+WeatherLocalDataSource --> IWeatherDAO : uses
+WeatherLocalDataSource --> IForecastDAO : uses
+
+@enduml

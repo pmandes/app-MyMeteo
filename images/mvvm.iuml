@@ -1,0 +1,34 @@
+@startuml
+actor User
+
+participant "Index (View)" as View
+participant "WeatherViewModel" as VM
+participant "WeatherRepository" as Repo
+participant "Local Data Source" as LocalDS
+participant "Remote Data Source" as RemoteDS
+
+== Example: City Search ==
+User -> View: Enters search query ("Warsaw")
+View -> VM: Calls searchCity("Warsaw")
+VM -> Repo: Delegates searchCity request
+Repo -> RemoteDS: Calls remoteDataSource.searchCity("Warsaw")
+RemoteDS --> Repo: Returns list of City objects
+Repo --> VM: Returns search results
+VM --> View: Updates state with search results
+View -> User: Displays search results
+
+== Example: Retrieving Weather Data ==
+User -> View: Selects a city from the list
+View -> VM: Calls getWeatherData(selectedCity)
+VM -> Repo: Calls getWeatherData(city)
+Repo -> LocalDS: Attempts to retrieve local weather data
+LocalDS --> Repo: Returns local data (or null)
+alt If local data is missing/obsolete
+  Repo -> RemoteDS: Fetches current weather and forecast
+  RemoteDS --> Repo: Returns fresh data
+  Repo -> LocalDS: Updates local cache
+end
+Repo --> VM: Returns consolidated WeatherData
+VM --> View: Updates state with WeatherData
+View -> User: Displays current weather and forecast
+@enduml

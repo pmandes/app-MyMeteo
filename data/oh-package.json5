@@ -1,7 +1,7 @@
 {
   "name": "@mymeteo/data",
   "version": "1.0.0",
-  "description": "Data module for MyMeteo app providing access to different data sources via Repository pattern",
+  "description": "Data module for MyMeteo app providing access to different data sources via Repository pattern.",
   "main": "Index.ts",
   "author": "",
   "license": "Apache-2.0",

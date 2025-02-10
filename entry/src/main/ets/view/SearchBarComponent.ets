@@ -1,5 +1,5 @@
 import { CommonConstants } from '../common/constants/CommonConstants';
-import { categoryViewModel } from '../viewmodel/CategoryViewModel';
+import { weatherViewModel } from '../viewmodel/WeatherViewModel';
 import { AppError, City } from '@mymeteo/data';
 import { ViewState } from '../pages/Index';
 
@@ -74,7 +74,7 @@ export struct SearchBarComponent {
     this.submitValue = value;
     this.viewState = ViewState.LOADING;
 
-    categoryViewModel.searchCity(value)
+    weatherViewModel.searchCity(value)
       .then(cities => {
 
         console.info('Cities: ', JSON.stringify(cities));

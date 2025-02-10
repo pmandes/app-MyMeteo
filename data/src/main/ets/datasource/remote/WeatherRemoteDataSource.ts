@@ -14,8 +14,8 @@ export class WeatherRemoteDataSource implements IWeatherRemoteDataSource {
     return this.api.searchCity(query);
   }
 
-  async getCurrentWeather(cityId: number, latitude: number, longitude: number): Promise<CurrentWeather> {
-    return this.api.getCurrentWeather(cityId, latitude, longitude);
+  async getCurrentWeather(latitude: number, longitude: number): Promise<CurrentWeather> {
+    return this.api.getCurrentWeather(latitude, longitude);
   }
 
   async getForecast(latitude: number, longitude: number): Promise<Forecast> {

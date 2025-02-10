@@ -1,6 +1,6 @@
 import { City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ViewState } from '../pages/Index';
-import { categoryViewModel } from '../viewmodel/CategoryViewModel';
+import { weatherViewModel } from '../viewmodel/WeatherViewModel';
 import { CityInfoItem } from './ui/CityInfoItem';
 
 @Component
@@ -65,7 +65,7 @@ export struct ResultsComponent {
   handleOnClick(city: City) {
 
     this.selectedCity = city;
-    const weatherData = categoryViewModel.getWeatherData(city);
+    const weatherData = weatherViewModel.getWeatherData(city);
 
     weatherData.then(data => {
       this.currentWeather = data.currentWeather;

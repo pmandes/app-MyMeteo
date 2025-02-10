@@ -1,11 +1,11 @@
 import { City, WeatherData, WeatherRepository } from '@mymeteo/data';
 
-const LOG_TAG = 'CategoryViewModel';
+const LOG_TAG = 'WeatherViewModel';
 
 /**
  * ViewModel managing city data and weather data retrieval for the UI layer.
  */
-export class CategoryViewModel {
+export class WeatherViewModel {
   private repository?: WeatherRepository;
 
   /**
@@ -77,4 +77,4 @@ export class CategoryViewModel {
   }
 }
 
-export let categoryViewModel: CategoryViewModel = new CategoryViewModel(globalThis.weatherRepository)
+export let weatherViewModel: WeatherViewModel = new WeatherViewModel(globalThis.weatherRepository)

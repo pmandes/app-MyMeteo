@@ -4,7 +4,7 @@ import { CityDetailsComponent } from '../view/CityDetailsComponent';
 import { LoadingComponent } from '../view/ui/LoadingComponent';
 import { AppError, City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ErrorComponent } from '../view/ui/ErrorComponent';
-import { categoryViewModel, CategoryViewModel } from '../viewmodel/CategoryViewModel';
+import { weatherViewModel, WeatherViewModel } from '../viewmodel/WeatherViewModel';
 
 
 export enum ViewState {
@@ -19,9 +19,9 @@ export enum ViewState {
 @Component
 struct Index {
 
-  @State viewModel: CategoryViewModel = categoryViewModel;
-
+  @State viewModel: WeatherViewModel = weatherViewModel;
   @State viewState: ViewState = ViewState.IDLE;
+
   @State cities: City[] = [];
   @State savedCities: City[] = [];
   @State selectedCity?: City = undefined;
@@ -112,6 +112,6 @@ struct Index {
   }
 
   async fetchSavedCities() {
-    this.savedCities = await categoryViewModel.getSavedCities();
+    this.savedCities = await weatherViewModel.getSavedCities();
   }
 }
