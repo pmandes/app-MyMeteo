@@ -1,7 +1,8 @@
 {
+  "modelVersion": "5.0.2",
   "name": "mymeteo",
   "version": "1.0.0",
-  "description": "Main MyMeteo package.",
+  "description": "Please describe the basic information.",
   "main": "",
   "author": "",
   "license": "",

@@ -2,7 +2,7 @@ import { ViewState } from '../pages/Index';
 import { City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { CurrentWeatherComponent } from './CurrentWeatherComponent';
 import { WeekForecastComponent } from './WeekForecastComponent';
-import curves from '@ohos.curves';
+import { curves } from '@kit.ArkUI';
 
 @Component
 export struct CityDetailsComponent {

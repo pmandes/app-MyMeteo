@@ -2,10 +2,10 @@
  * This is a concrete database class extending abstract RelationalDatabase.
  * Includes its own logic for table initialization and managing a singleton instance.
  */
-import relationalStore from '@ohos.data.relationalStore';
+import { relationalStore } from '@kit.ArkData';
 import { BaseRelationalDatabase } from './db/BaseRelationalDatabase';
 import { DBConfig } from '../config/DBConfig';
-import { Context } from '@ohos.abilityAccessCtrl';
+import { Context } from '@kit.AbilityKit'
 
 export class MyMeteoDB extends BaseRelationalDatabase {
   private static instance: MyMeteoDB | null = null;
