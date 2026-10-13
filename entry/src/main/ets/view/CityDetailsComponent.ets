@@ -28,8 +28,8 @@ export struct CityDetailsComponent {
 
             Blank(100)
           }
-        }
-      }.height("90%")
+        }.width('100%').padding({ left: 20, right: 20, bottom: 24 })
+      }.width('100%').height("90%")
       .scrollBar(BarState.Off)
       .align(Alignment.Top)
       .transition(this.effect)
