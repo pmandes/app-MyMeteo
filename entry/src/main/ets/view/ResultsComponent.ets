@@ -1,4 +1,4 @@
-import { City, CurrentWeather, Forecast } from '@mymeteo/data';
+import { AppError, City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ViewState } from '../pages/Index';
 import { weatherViewModel } from '../viewmodel/WeatherViewModel';
 import { CityInfoItem } from './ui/CityInfoItem';
@@ -11,6 +11,7 @@ export struct ResultsComponent {
   @Link currentWeather: CurrentWeather | null;
   @Link forecast: Forecast | null;
   @Link viewState: ViewState;
+  @Link error: AppError;
 
   build() {
 
@@ -24,7 +25,7 @@ export struct ResultsComponent {
           }) {
             Text("No results...")
               .fontColor(Color.White)
-              .textShadow({ color: Color.White, offsetX: 2, offsetY: 2, radius: 2 })
+              .textShadow({ color: '#40FFFFFF', offsetX: 0, offsetY: 1, radius: 3 })
           }
           .flexGrow(1)
 
@@ -46,7 +47,7 @@ export struct ResultsComponent {
             .fontColor(Color.White)
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
-            .textShadow({ color: Color.Black, offsetX: 1, offsetY: 1, radius: 1 })
+            .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
             .alignSelf(ItemAlign.Start)
             .margin({top: 16})
 
@@ -62,15 +63,17 @@ export struct ResultsComponent {
     }
   }
 
-  handleOnClick(city: City) {
-
+  async handleOnClick(city: City): Promise<void> {
     this.selectedCity = city;
-    const weatherData = weatherViewModel.getWeatherData(city);
-
-    weatherData.then(data => {
+    this.viewState = ViewState.LOADING;
+    try {
+      const data = await weatherViewModel.getWeatherData(city);
       this.currentWeather = data.currentWeather;
       this.forecast = data.forecast;
-      this.viewState = ViewState.SHOW_CITY
-    });
+      this.viewState = ViewState.SHOW_CITY;
+    } catch (error) {
+      this.error = error instanceof AppError ? error : new AppError(1001, 'Unable to load weather.');
+      this.viewState = ViewState.ERROR;
+    }
   }
 }

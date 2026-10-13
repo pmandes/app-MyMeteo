@@ -1,15 +1,12 @@
 import { TemperatureIcon } from './ui/TemperatureIcon';
 import { WeatherIcon } from './ui/WeatherIcon';
-import { CoordinateType, toDMS } from '../common/CoordinatesConverter';
-import { City, Current, CurrentUnits, CurrentWeather } from '@mymeteo/data';
+import { CoordinateType, toDMS } from '@mymeteo/common';
+import { City, CurrentWeather } from '@mymeteo/data';
 
 @Component
 export struct CurrentWeatherComponent {
   @Prop city: City
   @Prop currentWeather: CurrentWeather
-  current?: Current = this.currentWeather?.current;
-  units?: CurrentUnits = this.currentWeather?.current_units;
-
   build() {
 
     Column() {
@@ -18,12 +15,7 @@ export struct CurrentWeatherComponent {
         .fontSize(28)
         .fontWeight(FontWeight.Bold)
         .fontColor(Color.White)
-        .textShadow({
-          color: '#88000000',
-          offsetX: 3,
-          offsetY: 3,
-          radius: 5
-        })
+        .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
 
       Row() {
         Image($r('app.media.ic_location_pointer'))
@@ -36,11 +28,7 @@ export struct CurrentWeatherComponent {
           + toDMS(this.city?.lon, CoordinateType.LONGITUDE))
           .fontSize(12)
           .fontColor(Color.White)
-          .textShadow({
-            color: 0x88000000,
-            offsetX: 1,
-            offsetY: 1,
-            radius: 1 })
+          .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
       }.padding({ top: 6, bottom: 6 })
 
       if (this.currentWeather) {
@@ -53,15 +41,15 @@ export struct CurrentWeatherComponent {
               Text($r('app.string.wind')).fontColor(Color.White).fontSize(14).fontWeight(FontWeight.Bold)
             }.margin({ bottom: 2 })
 
-            Text($r('app.string.wind_speed_10m', `${this.current?.wind_speed_10m} ${this.units?.wind_speed_10m}`))
+            Text($r('app.string.wind_speed_10m', `${this.currentWeather?.current?.wind_speed_10m} ${this.currentWeather?.current_units?.wind_speed_10m}`))
               .fontColor(Color.White)
               .fontSize(12)
               .margin({ left: 21 })
-            Text($r('app.string.wind_direction_10m', `${this.current?.wind_direction_10m}${this.units?.wind_direction_10m}`))
+            Text($r('app.string.wind_direction_10m', `${this.currentWeather?.current?.wind_direction_10m}${this.currentWeather?.current_units?.wind_direction_10m}`))
               .fontColor(Color.White)
               .fontSize(12)
               .margin({ left: 21 })
-            Text($r('app.string.wind_gusts_10m', `${this.current?.wind_gusts_10m} ${this.units?.wind_gusts_10m}`))
+            Text($r('app.string.wind_gusts_10m', `${this.currentWeather?.current?.wind_gusts_10m} ${this.currentWeather?.current_units?.wind_gusts_10m}`))
               .fontColor(Color.White)
               .fontSize(12)
               .margin({ left: 21 })
@@ -71,7 +59,7 @@ export struct CurrentWeatherComponent {
               Text($r('app.string.pressure')).fontColor(Color.White).fontSize(14).fontWeight(FontWeight.Bold)
             }.margin({ top: 8, bottom: 2 })
 
-            Text(`${this.current?.surface_pressure} ${this.units?.surface_pressure}`)
+            Text(`${this.currentWeather?.current?.surface_pressure} ${this.currentWeather?.current_units?.surface_pressure}`)
               .fontColor(Color.White)
               .fontSize(12)
               .margin({ left: 21 })
@@ -81,7 +69,7 @@ export struct CurrentWeatherComponent {
               Text($r('app.string.humidity')).fontColor(Color.White).fontSize(14).fontWeight(FontWeight.Bold)
             }.margin({ top: 8, bottom: 2 })
 
-            Text($r('app.string.relative_humidity_2m', `${this.current?.relative_humidity_2m}${this.units?.relative_humidity_2m}`))
+            Text($r('app.string.relative_humidity_2m', `${this.currentWeather?.current?.relative_humidity_2m}${this.currentWeather?.current_units?.relative_humidity_2m}`))
               .fontColor(Color.White)
               .fontSize(12)
               .margin({ left: 21 })
@@ -92,34 +80,24 @@ export struct CurrentWeatherComponent {
 
           Column() {
             WeatherIcon({
-              weatherCode: this.current?.weather_code,
-              isDay: this.current?.is_day === 1 ? true : false
+              weatherCode: this.currentWeather?.current?.weather_code,
+              isDay: this.currentWeather?.current?.is_day === 1 ? true : false
             }).width(128).height(128)
 
             Row() {
               TemperatureIcon({
-                temp: this.current?.temperature_2m
+                temp: this.currentWeather?.current?.temperature_2m
               }).width(32);
 
-              Text(`${this.current?.temperature_2m}`)
+              Text(`${this.currentWeather?.current?.temperature_2m}`)
                 .fontSize(36)
                 .fontColor(Color.White)
-                .textShadow({
-                  color: '#000000',
-                  offsetX: 2,
-                  offsetY: 2,
-                  radius: 2
-                })
+                .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
 
-              Text(`${this.units?.temperature_2m}`)
+              Text(`${this.currentWeather?.current_units?.temperature_2m}`)
                 .fontSize(16)
                 .fontColor(Color.White)
-                .textShadow({
-                  color: '#000000',
-                  offsetX: 2,
-                  offsetY: 2,
-                  radius: 2
-                }).margin({ top: -13, left: 3 })
+                .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 }).margin({ top: -13, left: 3 })
             }
 
           }.width("50%").alignItems(HorizontalAlign.Center)

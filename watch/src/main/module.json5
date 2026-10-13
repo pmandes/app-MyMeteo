@@ -1,0 +1,68 @@
+{
+  "module": {
+    "name": "watch",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "WatchAbility",
+    "deviceTypes": [
+      "wearable"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.INTERNET",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.APPROXIMATELY_LOCATION",
+        "reason": "$string:permission_reason_approximately_location",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.LOCATION",
+        "reason": "$string:permission_reason_location",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      }
+    ],
+    "abilities": [
+      {
+        "name": "WatchAbility",
+        "srcEntry": "./ets/watchability/WatchAbility.ets",
+        "description": "$string:WatchAbility_desc",
+        "icon": "$media:app_icon",
+        "label": "$string:app_name",
+        "startWindowIcon": "$media:app_icon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "supportWindowMode" : ["fullscreen"],
+        "skills": [
+          {
+            "entities": [
+              "entity.system.home"
+            ],
+            "actions": [
+              "action.system.home"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

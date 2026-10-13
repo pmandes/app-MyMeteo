@@ -2,10 +2,11 @@
   "name": "entry",
   "version": "1.0.0",
   "description": "Entry module with presentation (UI) layer.",
-  "main": "",
+  "main": "Index.ts",
   "author": "",
   "license": "",
   "dependencies": {
-    "@mymeteo/data": "../data"
+    "@mymeteo/data": "../data",
+    "@mymeteo/common": "../common"
   }
 }

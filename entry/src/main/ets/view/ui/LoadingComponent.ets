@@ -11,12 +11,7 @@ export struct LoadingComponent {
 
         Text("Retrieving data...")
           .fontColor(Color.White)
-          .textShadow({
-            color: '#000000',
-            offsetX: 2,
-            offsetY: 2,
-            radius: 2
-          })
+          .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
           .margin({bottom: 8})
 
         LoadingProgress()

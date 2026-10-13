@@ -1,15 +1,15 @@
 {
-  "modelVersion": "5.0.2",
+  "modelVersion": "5.0.3",
   "name": "mymeteo",
   "version": "1.0.0",
-  "description": "Please describe the basic information.",
+  "description": "Main MyMeteo package.",
   "main": "",
   "author": "",
   "license": "",
   "dependencies": {
   },
   "devDependencies": {
-    "@ohos/hypium": "1.0.13",
+    "@ohos/hypium": "1.0.21",
     "@ohos/hamock": "1.0.0"
-  }
+  },
 }

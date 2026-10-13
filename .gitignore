@@ -9,3 +9,9 @@
 /.clang-format
 /.clang-tidy
 **/.test
+
+/.secret
+/.venv
+/doc
+/scripts
+/signatures

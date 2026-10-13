@@ -1,0 +1,10 @@
+{
+  "name": "@mymeteo/common",
+  "version": "1.0.0",
+  "description": "Common module with utility functions.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+  }
+}

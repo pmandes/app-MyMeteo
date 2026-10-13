@@ -21,4 +21,3 @@ export function toDMS(value: number, type: CoordinateType): string {
 
   return `${degrees}°${minutes}'${seconds.toFixed(2)}"${direction}`;
 }
-

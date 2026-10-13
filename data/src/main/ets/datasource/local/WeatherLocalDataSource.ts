@@ -46,9 +46,10 @@ export class WeatherLocalDataSource implements IWeatherLocalDataSource {
     console.error("LOAD: weather: " + JSON.stringify(weather) + ", forecast: " + JSON.stringify(forecast));
 
     return {
-      currentWeather: weather[0],
-      forecast: forecast[0],
-      lastUpdated: weather[0]?.last_update,
+      currentWeather: weather[0] ?? null,
+      forecast: forecast[0] ?? null,
+      lastUpdated: weather[0]?.last_update ?? null,
     }
   }
+
 }

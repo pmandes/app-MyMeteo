@@ -1,19 +1,40 @@
 {
   "app": {
     "signingConfigs": [
+      {
+        "name": "default",
+        "material": {
+          "certpath": "./signatures/OpenHarmonyProfileRelease.pem",
+          "storePassword": "0000001640755bde30360e6defcbb84fcf9fb6ca47ba9d1e1d32e66b869e3e6d2da423f86043",
+          "keyAlias": "openharmony application profile release",
+          "keyPassword": "000000160b16a3541c8111dd24c1269155b9b43aadac36a55f61a390882c8ae3e3838f96580c",
+          "profile": "./signatures/app1-profile.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "./signatures/OpenHarmony.p12"
+        }
+      }
     ],
     "products": [
       {
         "name": "default",
         "signingConfig": "default",
-        "compileSdkVersion": 20,
+        "compileSdkVersion": 23,
         "compatibleSdkVersion": 20,
-        "runtimeOS": "OpenHarmony",
+        "targetSdkVersion": 23,
+        "runtimeOS": "OpenHarmony"
+      },
+      {
+        "name": "watch",
+        "signingConfig": "default",
+        "compileSdkVersion": 23,
+        "compatibleSdkVersion": 20,
+        "targetSdkVersion": 23,
+        "runtimeOS": "OpenHarmony"
       }
     ],
     "buildModeSet": [
       {
-        "name": "debug",
+        "name": "debug"
       },
       {
         "name": "release"
@@ -34,8 +55,26 @@
       ]
     },
     {
+      "name": "watch",
+      "srcPath": "./watch",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "watch"
+          ]
+        }
+      ]
+    },
+    {
       "name": "data",
-      "srcPath": "./data"
+      "srcPath": "./data",
+      "targets": [{ "name": "default", "applyToProducts": ["default", "watch"] }]
+    },
+    {
+      "name": "common",
+      "srcPath": "./common",
+      "targets": [{ "name": "default", "applyToProducts": ["default", "watch"] }]
     }
   ]
 }

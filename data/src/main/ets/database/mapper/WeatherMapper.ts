@@ -61,6 +61,8 @@ export function entityToRecord(entity: WeatherEntity): relationalStore.ValuesBuc
     wind_gust: entity.windGust,
     pressure: entity.pressure,
     humidity: entity.humidity,
+    is_day: entity.isDay,
+    weather_code: entity.weatherCode,
     temperature_unit: entity.temperatureUnit,
     wind_speed_unit: entity.windSpeedUnit,
     wind_direction_unit: entity.windDirectionUnit,
