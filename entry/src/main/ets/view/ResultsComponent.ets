@@ -2,6 +2,7 @@ import { AppError, City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ViewState } from '../pages/Index';
 import { weatherViewModel } from '../viewmodel/WeatherViewModel';
 import { CityInfoItem } from './ui/CityInfoItem';
+import { formatWeatherUpdate } from '../common/WeatherTime';
 
 @Component
 export struct ResultsComponent {
@@ -12,6 +13,7 @@ export struct ResultsComponent {
   @Link forecast: Forecast | null;
   @Link viewState: ViewState;
   @Link error: AppError;
+  @Link updatedAt: string;
 
   build() {
 
@@ -31,13 +33,13 @@ export struct ResultsComponent {
 
         } else {
 
-          List() {
+          Column() {
             ForEach(this.results, (item: City) => {
-              ListItem() {
+              Column() {
                 CityInfoItem({ city: item })
               }.onClick(event => this.handleOnClick(item))
             })
-          }.height("89%").scrollBar(BarState.Off)
+          }.width('100%')
         }
       }
 
@@ -51,16 +53,16 @@ export struct ResultsComponent {
             .alignSelf(ItemAlign.Start)
             .margin({top: 16})
 
-          List() {
+          Column() {
             ForEach(this.savedCities, (item: City) => {
-              ListItem() {
+              Column() {
                 CityInfoItem({ city: item })
               }.onClick(event => this.handleOnClick(item))
             })
-          }.height("89%").scrollBar(BarState.Off)
+          }.width('100%')
         }
       }
-    }
+    }.width('100%')
   }
 
   async handleOnClick(city: City): Promise<void> {
@@ -70,6 +72,7 @@ export struct ResultsComponent {
       const data = await weatherViewModel.getWeatherData(city);
       this.currentWeather = data.currentWeather;
       this.forecast = data.forecast;
+      this.updatedAt = formatWeatherUpdate(data.lastUpdated);
       this.viewState = ViewState.SHOW_CITY;
     } catch (error) {
       this.error = error instanceof AppError ? error : new AppError(1001, 'Unable to load weather.');

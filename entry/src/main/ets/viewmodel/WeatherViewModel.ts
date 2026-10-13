@@ -22,8 +22,8 @@ export class WeatherViewModel {
     return this.getRepository().searchCity(query);
   }
 
-  async getWeatherData(city: City): Promise<WeatherData> {
-    return this.getRepository().getWeatherData(city);
+  async getWeatherData(city: City, forceRefresh: boolean = false): Promise<WeatherData> {
+    return this.getRepository().getWeatherData(city, forceRefresh);
   }
 }
 
