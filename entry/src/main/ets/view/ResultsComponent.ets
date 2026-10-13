@@ -27,7 +27,7 @@ export struct ResultsComponent {
           }) {
             Text("No results...")
               .fontColor(Color.White)
-              .textShadow({ color: '#40FFFFFF', offsetX: 0, offsetY: 1, radius: 3 })
+              .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
           }
           .flexGrow(1)
 
@@ -62,7 +62,7 @@ export struct ResultsComponent {
           }.width('100%')
         }
       }
-    }.width('100%')
+    }.width('100%').padding({ left: 12, right: 12, bottom: 12 })
   }
 
   async handleOnClick(city: City): Promise<void> {

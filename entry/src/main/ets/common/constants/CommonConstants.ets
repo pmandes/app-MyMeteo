@@ -4,6 +4,8 @@ import { UIContext } from "@kit.ArkUI";
  * Common constants for all features.
  */
 export class CommonConstants {
+  static readonly SEARCH_PANEL_HEIGHT: number = 64;
+  static readonly SEARCH_GLASS_COLOR: string = '#40102A43';
   /**
    * Search weight.
    */
