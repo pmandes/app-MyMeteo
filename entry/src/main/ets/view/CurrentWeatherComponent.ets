@@ -114,10 +114,10 @@ export struct CurrentWeatherComponent {
     }
     .alignItems(HorizontalAlign.Start)
     .borderRadius(20)
-    .backgroundColor(0x22000000)
-    .shadow(ShadowStyle.OUTER_DEFAULT_SM)
+    .backgroundColor(0x4D102A43)
+    .shadow({ radius: 8, color: '#24182431', offsetX: 0, offsetY: 4 })
     .padding(16)
-    .width("95%")
+    .width("100%")
     .margin({
       top: 16
     })
