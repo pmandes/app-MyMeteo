@@ -1,5 +1,5 @@
 import { City } from '@mymeteo/data';
-import { CoordinateType, toDMS } from '../../common/CoordinatesConverter';
+import { CoordinateType, toDMS } from '@mymeteo/common';
 import { curves } from '@kit.ArkUI';
 
 @Component

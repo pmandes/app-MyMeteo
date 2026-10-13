@@ -88,17 +88,20 @@ export abstract class BaseRelationalDatabase {
       this.rdbStore
         .query(predicates, columns)
         .then(resultSet => {
-          const count: number = resultSet.rowCount;
+          try {
+            const count: number = resultSet.rowCount;
 
-          console.debug('DB row count: ' + count);
-          console.debug('DB resultSet: ' + JSON.stringify(resultSet));
+            console.debug('DB row count: ' + count);
+            console.debug('DB resultSet: ' + JSON.stringify(resultSet));
 
-          const result: T[] = rowMapper(resultSet);
+            const result: T[] = rowMapper(resultSet);
 
-          console.debug('DB result: ' + JSON.stringify(result));
+            console.debug('DB result: ' + JSON.stringify(result));
 
-          resultSet.close();
-          resolve(result);
+            resolve(result);
+          } finally {
+            resultSet.close();
+          }
         })
         .catch((error: BusinessError) => {
           console.error('Database error:', JSON.stringify(error));

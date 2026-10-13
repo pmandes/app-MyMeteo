@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Watch UI module"
+    },
+    {
+      "name": "WatchAbility_desc",
+      "value": "Watch main ability"
+    },
+    {
+      "name": "WatchAbility_label",
+      "value": "WatchAbility"
+    }
+  ]
+}

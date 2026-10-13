@@ -2,31 +2,68 @@ name: Verify Build
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  build:
-    runs-on: oniro-runner
-    container:
-      image: francescopham/oniro-builder:6.0
-    env:
-      HOME: /root
+  core:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test compiler
+        run: npm install --no-save --package-lock=false typescript@4.9.5
+      - name: Test shared data layer
+        run: node --test tests/core.test.cjs
 
-      - name: Build and sign app
+  build:
+    needs: core
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - product: default
+            module: entry
+          - product: watch
+            module: watch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Oniro build CLI
+        run: npm install -g @oniroproject/oniro-app@0.11.0
+      - name: Cache SDK and command-line tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/setup-ohos-sdk
+            ~/command-line-tools
+          key: ohos-sdk-23-tools-${{ runner.os }}-oniro-app-0.11.0
+      - name: Install API 23 SDK and build tools
         run: |
-          cd "$GITHUB_WORKSPACE"
-          onirobuilder sign
-          onirobuilder build
-
-      - name: Upload built sample_app
+          oniro-app sdk install 6.1
+          oniro-app cmdtools install
+      - name: Generate development signing materials
+        run: oniro-app sign
+      - name: Build selected product
+        run: oniro-app build --product ${{ matrix.product }} --module ${{ matrix.module }} --mode debug
+      - name: Upload signed HAP
         uses: actions/upload-artifact@v4
         with:
-          name: HAP packages
-          path: entry/build/default/outputs/default
+          name: MyMeteo-${{ matrix.product }}
+          path: ${{ matrix.module }}/build/${{ matrix.product }}/outputs/default/*-signed.hap
+          if-no-files-found: error

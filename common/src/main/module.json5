@@ -1,0 +1,11 @@
+{
+  "module": {
+    "name": "common",
+    "type": "har",
+    "description": "$string:shared_desc",
+    "deviceTypes": [
+      "default",
+      "wearable"
+    ]
+  }
+}

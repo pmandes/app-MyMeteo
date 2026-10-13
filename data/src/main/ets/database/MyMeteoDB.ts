@@ -5,7 +5,7 @@
 import { relationalStore } from '@kit.ArkData';
 import { BaseRelationalDatabase } from './db/BaseRelationalDatabase';
 import { DBConfig } from '../config/DBConfig';
-import { Context } from '@kit.AbilityKit'
+import { common } from '@kit.AbilityKit';
 
 export class MyMeteoDB extends BaseRelationalDatabase {
   private static instance: MyMeteoDB | null = null;
@@ -23,7 +23,7 @@ export class MyMeteoDB extends BaseRelationalDatabase {
    * @param {Context} context - The application context required to create RdbStore.
    * @returns {Promise<MyMeteoDB>} An instance of MyMeteoDB.
    */
-  public static async getInstance(context: Context): Promise<MyMeteoDB> {
+  public static async getInstance(context: common.Context): Promise<MyMeteoDB> {
     if (!MyMeteoDB.instance) {
       const store = await relationalStore.getRdbStore(context, DBConfig.STORE_CONFIG);
       await MyMeteoDB.initializeTables(store);

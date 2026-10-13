@@ -1,7 +1,9 @@
 import { IWeatherRemoteDataSource } from '../datasource/remote/IWeatherRemoteDataSource';
 import { IWeatherLocalDataSource } from '../datasource/local/IWeatherLocalDataSource';
-import { City, CurrentWeather, Forecast } from '../net/dto/WeatherDTO';
+import { City, CurrentWeather, Forecast, LatLng } from '../net/dto/WeatherDTO';
 import { WeatherData } from '../model/WeatherData';
+import { ILocationProvider } from '../datasource/local/ILocationProvider';
+import { AppError } from '../common/AppError';
 
 const LOG_TAG = 'WeatherRepository';
 
@@ -12,16 +14,18 @@ const LOG_TAG = 'WeatherRepository';
 export class WeatherRepository {
   private remoteDataSource: IWeatherRemoteDataSource;
   private localDataSource: IWeatherLocalDataSource;
-  private FIFTEEN_MINUTES = 1 * 60 * 1000;
+  private locationProvider: ILocationProvider;
+  private readonly FIFTEEN_MINUTES: number = 15 * 60 * 1000;
 
   /**
    * Creates a new instance of WeatherRepository.
    * @param {IWeatherRemoteDataSource} remoteDataSource - The remote data source for weather (API calls).
    * @param {IWeatherLocalDataSource} localDataSource - The local data source (e.g. DB or IndexedDB).
    */
-  constructor(remoteDataSource: IWeatherRemoteDataSource, localDataSource: IWeatherLocalDataSource) {
+  constructor(remoteDataSource: IWeatherRemoteDataSource, localDataSource: IWeatherLocalDataSource, locationProvider: ILocationProvider) {
     this.remoteDataSource = remoteDataSource;
     this.localDataSource = localDataSource;
+    this.locationProvider = locationProvider;
   }
 
   /**
@@ -33,6 +37,9 @@ export class WeatherRepository {
    * @returns {Promise<WeatherData>} A promise that resolves to the weather data (current + forecast).
    */
   async getWeatherData(city: City): Promise<WeatherData> {
+    if (!city || city.place_id === undefined || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) {
+      throw new AppError(1003, 'Invalid city or coordinates.');
+    }
     console.info(`[${LOG_TAG}] getWeatherData start for city: ${JSON.stringify(city)}`);
 
     console.debug(`[${LOG_TAG}] Ensuring city is saved locally (cityId=${city.place_id})`);
@@ -51,7 +58,12 @@ export class WeatherRepository {
 
     if (this.isDataObsolete(lastUpdated)) {
       console.warn(`[${LOG_TAG}] Local data is obsolete (lastUpdated=${lastUpdated}). Fetching new data...`);
-      return this.fetchAndSaveWeatherData(city);
+      try {
+        return await this.fetchAndSaveWeatherData(city);
+      } catch (error) {
+        // Stale data remains useful when the network is unavailable.
+        return localData;
+      }
     }
 
     console.info(`[${LOG_TAG}] Local data is fresh enough. Returning local data.`);
@@ -88,7 +100,10 @@ export class WeatherRepository {
    * @param {number} lastUpdated - Timestamp (ms) of last update.
    * @returns {boolean} True if the data is older than 15 min, false otherwise.
    */
-  private isDataObsolete(lastUpdated: Date): boolean {
+  private isDataObsolete(lastUpdated: Date | null): boolean {
+    if (!lastUpdated || !Number.isFinite(lastUpdated.getTime())) {
+      return true;
+    }
     const now = Date.now();
     const last = lastUpdated.getTime();
     const diff = now - last;
@@ -158,6 +173,21 @@ export class WeatherRepository {
   }
 
   /**
+   * Searches for a city by coordinates via the remote data source.
+   *
+   * @param {number} latitude Latitude in decimal degrees (e.g., 52.2297).
+   * @param {number} longitude Longitude in decimal degrees (e.g., 21.0122).
+   * @param {number} zoom Zoom level used by the reverse geocoding endpoint.
+   * @returns {Promise<City>} A promise that resolves to the matching `City` object.
+   */
+  async searchCityByCoordinates(latitude: number, longitude: number, zoom: number): Promise<City> {
+    console.info(
+      `[${LOG_TAG}] searchCityByCoordinates: latitude=${latitude}, longitude=${longitude}, zoom=${zoom}`
+    );
+    return this.remoteDataSource.searchCityByCoordinates(latitude, longitude, zoom);
+  }
+
+  /**
    * Retrieves current weather from remote for a given city and coords.
    * @param {number} cityId - The place_id of the city.
    * @param {number} latitude - Latitude coordinate.
@@ -178,5 +208,10 @@ export class WeatherRepository {
   async getForecast(latitude: number, longitude: number): Promise<Forecast> {
     console.info(`[${LOG_TAG}] getForecast -> lat=${latitude}, lon=${longitude}`);
     return this.remoteDataSource.getForecast(latitude, longitude);
+  }
+
+  async getCurrentLocation(): Promise<LatLng> {
+    console.info(`[${LOG_TAG}] getCurrentLocation`);
+    return this.locationProvider.getCurrentLocation();
   }
 }

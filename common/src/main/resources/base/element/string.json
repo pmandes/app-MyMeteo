@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "shared_desc",
+      "value": "Common shared module with utility functions."
+    },
+    {
+      "name": "permission_reason_approximately_location",
+      "value": "Location is used to display weather for your current city."
+    },
+    {
+      "name": "permission_reason_location",
+      "value": "Location is used to display weather for your current city."
+    }
+  ]
+}

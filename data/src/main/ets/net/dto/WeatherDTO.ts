@@ -1,10 +1,15 @@
 export interface City {
-  place_id:     number,
-  name:         string,
-  display_name: string,
-  lon:          number,
-  lat:          number,
-  last_update:  Date
+  place_id?:     number,
+  name?:         string,
+  display_name?: string,
+  lon?:          number,
+  lat?:          number,
+  last_update?:  Date
+}
+
+export interface LatLng {
+  latitude: number,
+  longitude: number
 }
 
 export interface CurrentWeather {

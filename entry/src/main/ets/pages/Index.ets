@@ -56,7 +56,8 @@ struct Index {
           savedCities: this.savedCities,
           selectedCity: this.selectedCity,
           currentWeather: this.currentWeather,
-          forecast: this.forecast
+          forecast: this.forecast,
+          error: this.error
         });
 
       } else if (this.viewState == ViewState.SHOW_CITY) {
@@ -112,6 +113,11 @@ struct Index {
   }
 
   async fetchSavedCities() {
-    this.savedCities = await weatherViewModel.getSavedCities();
+    try {
+      this.savedCities = await weatherViewModel.getSavedCities();
+    } catch (error) {
+      this.error = error instanceof AppError ? error : new AppError(1100, 'Unable to load saved cities.');
+      this.viewState = ViewState.ERROR;
+    }
   }
 }
