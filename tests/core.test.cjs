@@ -7,7 +7,7 @@ const ts = require(process.env.CORE_TYPESCRIPT_PATH || 'typescript');
 const root = path.resolve(__dirname, '..');
 
 // Run the production data layer on the host, substituting only platform APIs.
-function loader(stubs = {}) {
+function loader(stubs = {}, globals = {}) {
   const cache = new Map();
   function load(file) {
     file = path.resolve(root, file);
@@ -25,7 +25,7 @@ function loader(stubs = {}) {
     };
     const quietConsole = { debug() {}, info() {}, warn() {}, error() {} };
     vm.runInNewContext(code, { module, exports: module.exports, require: requireSource,
-      console: quietConsole, Date, Number, Promise, Error, Intl }, { filename: file });
+      console: quietConsole, Date, Number, Promise, Error, Intl, ...globals }, { filename: file });
     return module.exports;
   }
   return load;
@@ -106,7 +106,7 @@ for (const scenario of ['success', 'network', 'status', 'json']) {
         assert.equal(options.connectTimeout, 10000);
         assert.equal(options.readTimeout, 10000);
         if (scenario === 'network') throw new Error('offline');
-        return { responseCode: scenario === 'status' ? 503 : 200, result: scenario === 'json' ? 'invalid' : '{"ok":true}' };
+        return { responseCode: scenario === 'status' ? 404 : 200, result: scenario === 'json' ? 'invalid' : '{"ok":true}' };
       },
       destroy() { destroyed++; }
     }) };
@@ -118,6 +118,40 @@ for (const scenario of ['success', 'network', 'status', 'json']) {
     assert.equal(destroyed, 1);
   });
 }
+
+// Replays the given responses; the fake timer records retry delays instead of waiting.
+function scriptedHttp(responses) {
+  const http = { requests: 0, destroyed: 0, delays: [] };
+  const platform = { createHttp: () => ({
+    async request() { http.requests++; return responses.shift(); },
+    destroy() { http.destroyed++; }
+  }) };
+  const load = loader({ '@ohos.net.http': { default: platform } },
+    { setTimeout: (resolve, ms) => { http.delays.push(ms); resolve(); } });
+  http.makeHttpRequest = load('data/src/main/ets/net/makeHttpRequest.ts').makeHttpRequest;
+  return http;
+}
+const httpOk = { responseCode: 200, result: '{"ok":true}' };
+
+test('HTTP 503 is retried with backoff until it succeeds', async () => {
+  const http = scriptedHttp([{ responseCode: 503, result: '' }, httpOk]);
+  assert.equal((await http.makeHttpRequest('https://example.com', 'GET')).ok, true);
+  assert.equal(http.requests, 2);
+  assert.equal(http.destroyed, 2);
+  assert.deepEqual(http.delays, [1000]);
+});
+test('HTTP 503 gives up after three attempts with a readable error', async () => {
+  const http = scriptedHttp([503, 503, 503].map(responseCode => ({ responseCode, result: '' })));
+  await assert.rejects(http.makeHttpRequest('https://example.com', 'GET'),
+    error => error.code === 1002 && /temporarily unavailable/.test(error.msg));
+  assert.equal(http.destroyed, 3);
+  assert.deepEqual(http.delays, [1000, 2000]);
+});
+test('HTTP Retry-After is honoured up to the retry cap', async () => {
+  const http = scriptedHttp([{ responseCode: 429, result: '', header: { 'Retry-After': '30' } }, httpOk]);
+  assert.equal((await http.makeHttpRequest('https://example.com', 'GET')).ok, true);
+  assert.deepEqual(http.delays, [5000]);
+});
 test('watch ViewModel uses repository injected after construction and propagates GPS errors', async () => {
   const load = loader();
   const { AppError } = load('data/src/main/ets/common/AppError.ts');
