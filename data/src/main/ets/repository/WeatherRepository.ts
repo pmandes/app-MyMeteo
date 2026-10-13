@@ -2,6 +2,7 @@ import { IWeatherRemoteDataSource } from '../datasource/remote/IWeatherRemoteDat
 import { IWeatherLocalDataSource } from '../datasource/local/IWeatherLocalDataSource';
 import { City, CurrentWeather, Forecast, LatLng } from '../net/dto/WeatherDTO';
 import { WeatherData } from '../model/WeatherData';
+import { CityWeatherData } from '../model/CityWeatherData';
 import { ILocationProvider } from '../datasource/local/ILocationProvider';
 import { AppError } from '../common/AppError';
 
@@ -126,6 +127,31 @@ export class WeatherRepository {
   async getSavedCities(): Promise<City[]> {
     console.info(`[${LOG_TAG}] getSavedCities -> returning all cities from local DB...`);
     return this.localDataSource.getAllCities();
+  }
+
+  /** Most recently retrieved complete weather, independent of city insertion order. */
+  async getLastSavedWeatherData(): Promise<CityWeatherData | null> {
+    const cities = await this.localDataSource.getAllCities();
+    let latest: CityWeatherData | null = null;
+    let latestTimestamp: number = -1;
+    for (const city of cities) {
+      if (city.place_id === undefined || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) {
+        continue;
+      }
+      try {
+        const weather = await this.localDataSource.getWeatherData(city.place_id);
+        const timestamp = weather.lastUpdated?.getTime() ?? NaN;
+        if (weather.currentWeather?.current && weather.forecast?.daily?.time?.length &&
+          Number.isFinite(timestamp) && timestamp > latestTimestamp) {
+          latest = { city, weather };
+          latestTimestamp = timestamp;
+        }
+      } catch (error) {
+        // One unreadable record must not hide other usable saved weather.
+        console.warn('Unable to read saved weather for city ' + city.place_id);
+      }
+    }
+    return latest;
   }
 
   /**

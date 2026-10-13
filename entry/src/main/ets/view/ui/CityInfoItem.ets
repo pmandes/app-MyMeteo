@@ -27,28 +27,34 @@ export struct CityInfoItem {
       Text(this.city.name)
         .fontSize(17)
         .fontWeight(FontWeight.Bold)
+        .fontColor(Color.White)
+        .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
         .margin({bottom: 6});
 
       Text(this.city.display_name)
         .fontSize(14)
-        .fontColor(0x555555);
+        .fontColor('#E6FFFFFF')
+        .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 });
 
       Row() {
         Image($r('app.media.ic_location_pointer'))
           .width(16)
           .height(16)
+          .fillColor(Color.White)
           .margin({right: 4});
 
         Text(toDMS(this.city.lat, CoordinateType.LATITUDE) + ", "
           + toDMS(this.city.lon, CoordinateType.LONGITUDE))
-          .fontSize(12);
+          .fontSize(12)
+          .fontColor('#E6FFFFFF')
+          .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 });
       }.padding({top: 6, bottom: 6})
 
     }
     .alignItems(HorizontalAlign.Start)
-    .backgroundColor(0xFFFFFF)
+    .backgroundColor(0x4D102A43)
     .borderRadius(20)
-    .opacity(0.7)
+    .shadow({ radius: 8, color: '#24182431', offsetX: 0, offsetY: 4 })
     .padding(16)
     .margin({top: 16})
     .width("100%")

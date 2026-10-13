@@ -19,7 +19,7 @@ export struct CityDetailsComponent {
         if (this.updatedAt) {
           Text('Last updated: ' + this.updatedAt)
             .id('weather-updated-at')
-            .fontSize(13)
+            .fontSize(11)
             .fontColor('#E6FFFFFF')
             .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
             .textAlign(TextAlign.Center)

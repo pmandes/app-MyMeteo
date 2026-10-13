@@ -267,20 +267,24 @@ const timeLoad = loader({ '@kit.LocalizationKit': { i18n: {
 } } });
 const { formatWeatherUpdate } = timeLoad('entry/src/main/ets/common/WeatherTime.ts');
 
-function mobileRefreshPage(fetch) {
-  const file = path.join(root, 'entry/src/main/ets/pages/Index.ets');
+function mobilePageHandler(methodName, globals = {}, pagePath = 'entry/src/main/ets/pages/Index.ets') {
+  const file = path.join(root, pagePath);
   const source = ts.createSourceFile('Index.ts', fs.readFileSync(file, 'utf8').replace('struct Index', 'class Index'),
     ts.ScriptTarget.ES2020, true);
   const page = source.statements.find(node => ts.isClassDeclaration(node) && node.name.text === 'Index');
-  const handler = page.members.find(node => ts.isMethodDeclaration(node) && node.name.getText(source) === 'refreshWeather');
-  assert.ok(handler, 'Production refresh handler must exist');
+  const handler = page.members.find(node => ts.isMethodDeclaration(node) && node.name.getText(source) === methodName);
+  assert.ok(handler, 'Production page handler must exist: ' + methodName);
   const code = ts.transpileModule('class RefreshPage {' + handler.getText(source) + '} module.exports = RefreshPage;', {
     compilerOptions: { target: ts.ScriptTarget.ES2020 }
   }).outputText;
   const module = { exports: {} };
-  vm.runInNewContext(code, { module, ViewState: { SHOW_CITY: 4 }, console: { warn() {} }, formatWeatherUpdate });
-  return Object.assign(new module.exports(), {
-    selectedCity: city, viewState: 4, refreshGeneration: 0, refreshing: true,
+  vm.runInNewContext(code, { module, ViewState: { IDLE: 0, LOADING: 1, SHOW_CITY: 4 }, console: { warn() {} }, formatWeatherUpdate, ...globals });
+  return new module.exports();
+}
+
+function mobileRefreshPage(fetch) {
+  return Object.assign(mobilePageHandler('refreshWeather'), {
+    selectedCity: city, viewState: 4, refreshGeneration: 0, refreshing: true, refreshDragging: true,
     currentWeather: { temperature: 12 }, forecast: { days: [1] }, updatedAt: 'previous update',
     viewModel: { getWeatherData: fetch }
   });
@@ -295,6 +299,7 @@ test('mobile refresh failure stops spinner while keeping weather screen and time
   assert.equal(page.updatedAt, 'previous update');
   assert.equal(page.viewState, 4);
   assert.equal(page.refreshing, false);
+  assert.equal(page.refreshDragging, false);
 });
 test('mobile refresh success replaces both panels and update time', async () => {
   const fresh = { currentWeather: {}, forecast: {}, lastUpdated: new Date() };
@@ -308,6 +313,7 @@ test('mobile refresh success replaces both panels and update time', async () => 
   assert.strictEqual(page.forecast, fresh.forecast);
   assert.equal(page.updatedAt, formatWeatherUpdate(fresh.lastUpdated));
   assert.equal(page.refreshing, false);
+  assert.equal(page.refreshDragging, false);
 });
 test('late mobile refresh cannot overwrite a different screen or its refresh state', async () => {
   let finish;
@@ -320,6 +326,7 @@ test('late mobile refresh cannot overwrite a different screen or its refresh sta
   assert.strictEqual(page.currentWeather, weather);
   assert.equal(page.updatedAt, 'previous update');
   assert.equal(page.refreshing, true);
+  assert.equal(page.refreshDragging, true);
 });
 
 test('weather update time uses device time zone and omits invalid dates', () => {
@@ -329,3 +336,193 @@ test('weather update time uses device time zone and omits invalid dates', () => 
   assert.equal(formatWeatherUpdate(null), '');
   assert.equal(formatWeatherUpdate(new Date(NaN)), '');
 });
+
+
+function startupModel(repository) {
+  const { WeatherViewModel } = loader({ '@mymeteo/data': {} })(
+    'entry/src/main/ets/viewmodel/WeatherViewModel.ts');
+  const model = new WeatherViewModel();
+  model.setRepository(repository);
+  return model;
+}
+const startupWeather = { currentWeather: { current: { weather_code: 3 } },
+  forecast: { daily: { time: [1] } }, lastUpdated: new Date() };
+const startupSaved = { city, weather: startupWeather };
+test('mobile startup obtains location, resolves city and displays both weather panels', async () => {
+  const events = [];
+  const model = startupModel({
+    async getCurrentLocation() { events.push('location'); return { latitude: 52, longitude: 21 }; },
+    async searchCityByCoordinates(lat, lon, zoom) {
+      assert.equal(lat, 52); assert.equal(lon, 21); assert.equal(zoom, 13);
+      events.push('city'); return city;
+    },
+    async getWeatherData(selected) { assert.strictEqual(selected, city); events.push('weather'); return startupWeather; },
+    async getLastSavedWeatherData() { assert.fail('Location weather succeeded'); }
+  });
+  const result = await model.getStartupWeather(true);
+  assert.strictEqual(result.city, city);
+  assert.strictEqual(result.weather, startupWeather);
+  assert.deepEqual(events, ['location', 'city', 'weather']);
+});
+test('mobile startup skips GPS on permission denial and displays saved weather', async () => {
+  const model = startupModel({
+    async getCurrentLocation() { assert.fail('GPS requires permission'); },
+    async getLastSavedWeatherData() { return startupSaved; }
+  });
+  assert.strictEqual(await model.getStartupWeather(false), startupSaved);
+});
+for (const failedStep of ['location', 'city', 'weather', 'incomplete']) {
+  test(`mobile startup falls back to saved weather after ${failedStep} failure`, async () => {
+    const model = startupModel({
+      async getCurrentLocation() {
+        if (failedStep === 'location') throw new Error('GPS disabled');
+        return { latitude: 52, longitude: 21 };
+      },
+      async searchCityByCoordinates() {
+        if (failedStep === 'city') throw new Error('geocoding offline');
+        return city;
+      },
+      async getWeatherData() {
+        if (failedStep === 'weather') throw new Error('API offline');
+        return { currentWeather: null, forecast: null, lastUpdated: null };
+      },
+      async getLastSavedWeatherData() { return startupSaved; }
+    });
+    assert.strictEqual(await model.getStartupWeather(true), startupSaved);
+  });
+}
+test('mobile startup returns empty search when no saved weather or database is unavailable', async () => {
+  assert.equal(await startupModel({ async getLastSavedWeatherData() { return null; } }).getStartupWeather(false), null);
+  assert.equal(await startupModel({ async getLastSavedWeatherData() { throw new Error('DB unavailable'); } })
+    .getStartupWeather(false), null);
+});
+test('last saved weather uses retrieval time and ignores incomplete, invalid or unreadable records', async () => {
+  const { WeatherRepository } = loader()(repoPath);
+  const cities = Array.from({ length: 5 }, (_, id) => ({ ...city, place_id: id }));
+  const saved = [
+    { ...startupWeather, lastUpdated: new Date(2000) },
+    { ...startupWeather, lastUpdated: new Date(3000) },
+    { ...startupWeather, forecast: null, lastUpdated: new Date(9000) },
+    { ...startupWeather, lastUpdated: new Date(NaN) }
+  ];
+  const repo = new WeatherRepository({}, {
+    async getAllCities() { return cities; },
+    async getWeatherData(id) { if (id === 4) throw new Error('bad row'); return saved[id]; }
+  }, {});
+  const result = await repo.getLastSavedWeatherData();
+  assert.strictEqual(result.city, cities[1]);
+  assert.strictEqual(result.weather, saved[1]);
+  const empty = new WeatherRepository({}, { async getAllCities() { return []; } }, {});
+  assert.equal(await empty.getLastSavedWeatherData(), null);
+});
+function mobileStartupPage(model, permission) {
+  class PermissionManager { async requestPermissions() { return permission(); } }
+  return Object.assign(mobilePageHandler('loadInitialWeather', { PermissionManager }), {
+    viewState: 0, refreshGeneration: 0, viewModel: model,
+    getUIContext: () => ({ getHostContext: () => ({}) })
+  });
+}
+test('mobile page displays saved weather even when the permission API throws', async () => {
+  const page = mobileStartupPage({ async getSavedCities() { return [city]; },
+    async getStartupWeather(allowed) { assert.equal(allowed, false); return startupSaved; }
+  }, () => { throw new Error('permission unavailable'); });
+  await page.loadInitialWeather();
+  assert.equal(page.viewState, 4);
+  assert.strictEqual(page.selectedCity, city);
+  assert.strictEqual(page.currentWeather, startupWeather.currentWeather);
+  assert.strictEqual(page.forecast, startupWeather.forecast);
+});
+test('mobile page ends on empty search after denied location without saved weather', async () => {
+  const page = mobileStartupPage({ async getSavedCities() { return [city]; },
+    async getStartupWeather() { return null; }
+  }, () => false);
+  await page.loadInitialWeather();
+  assert.equal(page.viewState, 0);
+  assert.equal(page.savedCities.length, 0);
+});
+test('late startup cannot overwrite a manual search', async () => {
+  let finish;
+  const page = mobileStartupPage({ async getSavedCities() { return []; },
+    async getStartupWeather() { return new Promise(resolve => { finish = resolve; }); }
+  }, () => true);
+  const pending = page.loadInitialWeather();
+  // Wait until permission and the startup request have started.
+  while (!finish) await Promise.resolve();
+  page.refreshGeneration++;
+  page.viewState = 3;
+  finish(startupSaved);
+  await pending;
+  assert.equal(page.viewState, 3);
+  assert.equal(page.selectedCity, undefined);
+});
+test('weather code selects clear, cloudy, rain and snow background families', () => {
+  const { backgroundForWeather } = loader()('common/src/main/ets/utils/WeatherBackground.ts');
+  for (const code of [0, 1]) assert.equal(backgroundForWeather(code), 'clear');
+  for (const code of [2, 3, 45, 48]) assert.equal(backgroundForWeather(code), 'cloudy');
+  for (const code of [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99])
+    assert.equal(backgroundForWeather(code), 'rain');
+  for (const code of [71, 73, 75, 77, 85, 86]) assert.equal(backgroundForWeather(code), 'snow');
+  assert.equal(backgroundForWeather(undefined), '');
+  assert.equal(backgroundForWeather(999), '');
+});
+
+function backgroundPage(code, pagePath) {
+  const { WeatherBackground, backgroundForWeather } = loader()('common/src/main/ets/utils/WeatherBackground.ts');
+  const globals = { WeatherBackground, backgroundForWeather, Curve: { EaseInOut: 'ease-in-out' } };
+  const page = mobilePageHandler('onWeatherChange', globals, pagePath);
+  page.fadeInBackground = mobilePageHandler('fadeInBackground', globals, pagePath).fadeInBackground;
+  return Object.assign(page, {
+    currentWeather: { current: { weather_code: code } },
+    currentBackground: '', previousBackground: '', backgroundOpacity: 0,
+    backgroundPending: false, backgroundGeneration: 0,
+    getUIContext: () => ({ animateTo(options, change) { page.animation = options; change(); } })
+  });
+}
+
+for (const product of ['entry', 'watch']) {
+const pagePath = `${product}/src/main/ets/pages/Index.ets`;
+test(`${product} background waits for the image before fading from gradient and preserves duration`, () => {
+  const page = backgroundPage(0, pagePath);
+  page.onWeatherChange();
+  assert.equal(page.currentBackground, 'clear');
+  assert.equal(page.backgroundOpacity, 0);
+  assert.equal(page.animation, undefined);
+  page.fadeInBackground();
+  assert.equal(page.backgroundOpacity, 1);
+  assert.equal(page.animation.duration, 2400);
+  assert.equal(page.animation.curve, 'ease-in-out');
+});
+
+test(`${product} transition keeps the previous image until completion and does not repeat for the same family`, () => {
+  const page = backgroundPage(61, pagePath);
+  page.currentBackground = 'clear';
+  page.onWeatherChange();
+  assert.equal(page.previousBackground, 'clear');
+  assert.equal(page.currentBackground, 'rain');
+  page.fadeInBackground();
+  assert.equal(page.previousBackground, 'clear');
+  page.animation.onFinish();
+  assert.equal(page.previousBackground, '');
+  const generation = page.backgroundGeneration;
+  page.currentWeather.current.weather_code = 63;
+  page.onWeatherChange();
+  assert.equal(page.backgroundGeneration, generation);
+  assert.equal(page.backgroundOpacity, 1);
+});
+
+test(`${product} late animation completion cannot clear a newer weather transition`, () => {
+  const page = backgroundPage(61, pagePath);
+  page.currentBackground = 'clear';
+  page.onWeatherChange();
+  page.fadeInBackground();
+  const first = page.animation;
+  page.currentWeather.current.weather_code = 71;
+  page.onWeatherChange();
+  assert.equal(page.previousBackground, 'rain');
+  first.onFinish();
+  assert.equal(page.previousBackground, 'rain');
+  page.fadeInBackground();
+  page.animation.onFinish();
+  assert.equal(page.previousBackground, '');
+});
+}

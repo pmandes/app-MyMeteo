@@ -1,5 +1,5 @@
 import { common, Permissions } from '@kit.AbilityKit';
-import { PermissionManager } from '@mymeteo/common';
+import { PermissionManager, backgroundForWeather, WeatherBackground } from '@mymeteo/common';
 import { AppError, City, CurrentWeather } from '@mymeteo/data';
 import { CurrentWeatherComponent } from '../view/CurrentWeatherComponent';
 import { weatherViewModel } from '../viewmodel/WeatherViewModel';
@@ -7,16 +7,75 @@ import { weatherViewModel } from '../viewmodel/WeatherViewModel';
 @Entry
 @Component
 struct Index {
-  @State currentWeather: CurrentWeather | null = null;
+  @State @Watch('onWeatherChange') currentWeather: CurrentWeather | null = null;
   @State city: City | null = null;
   @State loading: boolean = true;
   @State error: string = '';
+  @State currentBackground: WeatherBackground = WeatherBackground.NONE;
+  @State previousBackground: WeatherBackground = WeatherBackground.NONE;
+  @State backgroundOpacity: number = 0;
+  private backgroundPending: boolean = false;
+  private backgroundGeneration: number = 0;
 
   aboutToAppear(): void {
     this.fetchWeather();
   }
 
+  aboutToDisappear(): void {
+    this.backgroundGeneration++;
+  }
+
+  onWeatherChange(): void {
+    const next = backgroundForWeather(this.currentWeather?.current?.weather_code);
+    if (next === this.currentBackground) { return; }
+    this.backgroundGeneration++;
+    this.previousBackground = this.currentBackground;
+    this.currentBackground = next;
+    this.backgroundOpacity = 0;
+    this.backgroundPending = true;
+    if (next === WeatherBackground.NONE) { this.fadeInBackground(); }
+  }
+
+  fadeInBackground(): void {
+    if (!this.backgroundPending) { return; }
+    this.backgroundPending = false;
+    const generation = this.backgroundGeneration;
+    this.getUIContext().animateTo({ duration: 2400, curve: Curve.EaseInOut, onFinish: () => {
+      if (generation === this.backgroundGeneration) {
+        this.previousBackground = WeatherBackground.NONE;
+      }
+    } }, () => { this.backgroundOpacity = 1; });
+  }
+
+  weatherBackgroundResource(background: WeatherBackground): Resource {
+    switch (background) {
+      case WeatherBackground.CLEAR: return $r('app.media.weather_bg_clear');
+      case WeatherBackground.RAIN: return $r('app.media.weather_bg_rain');
+      case WeatherBackground.SNOW: return $r('app.media.weather_bg_snow');
+      default: return $r('app.media.weather_bg_cloudy');
+    }
+  }
+
   build() {
+    Stack() {
+      Column() {}.width('100%').height('100%')
+        .linearGradient({ direction: GradientDirection.RightBottom,
+          colors: [['#ffcad8ea', 0.0], ['#ff2f6ba7', 1.0]] })
+
+      if (this.previousBackground !== WeatherBackground.NONE) {
+        Image(this.weatherBackgroundResource(this.previousBackground)).width('100%').height('100%')
+          .objectFit(ImageFit.Cover).opacity(1 - (this.currentBackground === WeatherBackground.NONE ? this.backgroundOpacity : 0))
+          .hitTestBehavior(HitTestMode.None)
+      }
+      if (this.currentBackground !== WeatherBackground.NONE) {
+        Image(this.weatherBackgroundResource(this.currentBackground)).id('weather-background').width('100%').height('100%')
+          .objectFit(ImageFit.Cover).opacity(this.backgroundOpacity)
+          .onComplete((event) => { if (event?.loadingStatus === 1) { this.fadeInBackground(); } })
+          .hitTestBehavior(HitTestMode.None)
+      }
+      // Soft blue glass keeps small white labels legible over the pastel sky.
+      Column() {}.width('100%').height('100%').backgroundColor('#4D102A43')
+        .hitTestBehavior(HitTestMode.None)
     Column() {
       if (this.loading) {
         LoadingProgress().width(32).height(32).color(Color.White)
@@ -30,8 +89,8 @@ struct Index {
       }
     }
     .justifyContent(FlexAlign.Center)
-    .linearGradient({ direction: GradientDirection.RightBottom, colors: [['#ffcad8ea', 0.0], ['#ff2f6ba7', 1.0]] })
     .width('100%').height('100%')
+    }.width('100%').height('100%')
   }
 
   async fetchWeather(): Promise<void> {

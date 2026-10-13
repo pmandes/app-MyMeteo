@@ -9,4 +9,5 @@ export { WeatherDAORdb } from './src/main/ets/database/dao/WeatherDAORdb';
 export { ForecastDAORdb } from './src/main/ets/database/dao/ForecastDAORdb';
 export { AppError } from './src/main/ets/common/AppError';
 export { WeatherData } from './src/main/ets/model/WeatherData';
+export { CityWeatherData } from './src/main/ets/model/CityWeatherData';
 export { LocationProvider } from './src/main/ets/datasource/local/LocationProvider';

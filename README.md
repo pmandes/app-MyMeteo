@@ -15,12 +15,29 @@ Both products share the same data and utility modules.
 Both products compile against **OpenHarmony SDK API 23** and require **API 20 or later**.
 The module target is `default` for each product; select the product to choose the UI.
 
-The mobile UI draws its gradient behind translucent system-bar panels. City lists and
+The mobile UI draws its background behind translucent system-bar panels. The status
+bar and search panel share the same darker glass color. City lists and
 weather panels scroll underneath them; the glass search panel collapses when scrolling
 up and returns when scrolling down. Pull down at the top of a weather page to fetch
 current weather and forecast again, bypassing the 15-minute cache. A failed refresh
 keeps the displayed data and its original update time. The retrieval time appears
-below the forecast.
+below the forecast, in a smaller font. The refresh spinner is white and the search
+field uses regular 15vp white text with a subtle shadow on darker glass. Its panel
+is 64vp tall. Search results and saved cities share the weather cards' translucent
+blue background, rounded corners, white text and soft shadow.
+
+Mobile startup requests foreground location permission and opens current weather
+and the forecast for the device location. Denied permission, unavailable GPS or
+network failure falls back to the most recently retrieved complete weather in the
+database. Without usable saved weather, startup opens an empty search screen.
+Manual search takes precedence over a late location response.
+
+Both products share four subtle pastel blue backgrounds representing clear, cloudy,
+rainy and snowy weather. The wearable crops the sky to its round viewport and uses
+a subtle blue overlay for small white labels. A decoded image fades in over 2.4 seconds above the gradient or previous
+weather background. Refreshing the same weather family does not restart the fade.
+The [GPT Image prompts and asset paths](images/weather-backgrounds/PROMPTS.md)
+record the generated originals.
 
 The wearable PoC obtains location after the permission prompt, reverse-geocodes it with
 Nominatim, then displays current weather. Loading and failure states remain visible;
@@ -58,10 +75,10 @@ Artifacts are named `MyMeteo-default` and `MyMeteo-watch`.
 - `entry`: mobile ArkUI views and ViewModel.
 - `watch`: wearable ArkUI view and ViewModel.
 - `data`: repository, local RDB/DAO/mapper layer, HTTP APIs and location provider.
-- `common`: shared utility functions, resources and permission handling.
+- `common`: shared utility functions, weather backgrounds, resources and permission handling.
 
 Abilities initialize the database and inject the repository into their ViewModel before
-loading the main page. GPS is requested by the wearable page after permission handling.
+loading the main page. Both pages request GPS after permission handling.
 The shared repository returns cached weather younger than 15 minutes. Older complete
 weather is used when refreshing fails; without cached data, the failure is reported.
 Weather and forecast requests run in parallel. HTTP requests have bounded timeouts and
