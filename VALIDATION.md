@@ -25,7 +25,7 @@ Both products use API 23 for compilation/targeting and API 20 as their minimum.
 ## Verification
 
 - [GitHub Actions verification of the merge](https://github.com/pmandes/app-MyMeteo/actions/runs/38399555081) passed core tests and both product builds, producing signed mobile and watch HAP artifacts.
-- 19 host regression tests pass against production core classes with substituted platform APIs.
+- 26 host regression tests pass against production code with substituted platform APIs. Refresh checks cover bypassing a fresh cache, preserving cached and displayed weather/timestamps on failure, stopping the spinner, forwarding the mobile refresh flag, ignoring a late response after leaving the page, and formatting retrieval time in the device time zone.
 - Both signed HAPs build using SDK 6.1.0.32 (API 23). Their packaged metadata declares `minAPIVersion: 20` and `targetAPIVersion: 23`.
 - Deployment and ability startup succeeded on the existing API 20 emulators: Pura 80 Pro and Huawei_Wearable.
 - Mobile city search returned Warszawa; selecting it loaded the forecast.
@@ -33,6 +33,8 @@ Both products use API 23 for compilation/targeting and API 20 as their minimum.
 - Granting foreground location access successfully obtained the device location and weather.
 - Emulator checks caught ArkUI dropping custom getters from component output. Both weather views now read directly from their current `@Prop` data; emulator display verification confirms numeric temperature, wind, pressure, humidity and units in both products.
 - Mobile weather and forecast panels use a darker translucent blue background and a bounded soft shadow; the full-width scroll content reserves side insets for the blur.
+- Mobile system bars overlay the gradient with glass panels; the scrollable content passes beneath them. A long Springfield search verified that the search panel collapses on upward scrolling and returns on downward scrolling, retaining the query.
+- Pulling down on the Warszawa weather screen fetched data despite the fresh cache and changed the retrieval timestamp below the forecast. The timestamp follows the device locale and time zone.
 - Softened text shadows with a translucent dark blue, no horizontal offset and a small blur in both UIs.
 - Replaced the green mobile and red wearable startup backgrounds with light blue colors matching their existing UIs.
 - Emulator 6.1 does not support the CLI geolocation injection command; the existing device location was used.

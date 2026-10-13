@@ -25,7 +25,7 @@ function loader(stubs = {}) {
     };
     const quietConsole = { debug() {}, info() {}, warn() {}, error() {} };
     vm.runInNewContext(code, { module, exports: module.exports, require: requireSource,
-      console: quietConsole, Date, Number, Promise, Error }, { filename: file });
+      console: quietConsole, Date, Number, Promise, Error, Intl }, { filename: file });
     return module.exports;
   }
   return load;
@@ -221,4 +221,111 @@ test('mobile ViewModel reports initialization and network failures to its UI', a
   await assert.rejects(model.getSavedCities(), error => error.code === 1100);
   model.setRepository({ async getWeatherData() { throw new AppError(1001, 'offline'); } });
   await assert.rejects(model.getWeatherData(city), error => error.code === 1001);
+});
+
+
+test('forced refresh bypasses fresh cache and saves new data', async () => {
+  const f = fixture(10);
+  const result = await f.repository.getWeatherData(city, true);
+  assert.notStrictEqual(result, f.cached);
+  assert.equal(f.fetches(), 1);
+  assert.equal(f.saves(), 1);
+  assert.ok(result.lastUpdated > f.cached.lastUpdated);
+});
+test('failed forced refresh leaves cached weather and its timestamp untouched', async () => {
+  for (const age of [10, 16]) {
+    const f = fixture(age, true);
+    const timestamp = f.cached.lastUpdated.getTime();
+    const weather = f.cached.currentWeather;
+    await assert.rejects(f.repository.getWeatherData(city, true), /offline/);
+    assert.equal(f.fetches(), 1);
+    assert.equal(f.saves(), 0);
+    assert.strictEqual(f.cached.currentWeather, weather);
+    assert.equal(f.cached.lastUpdated.getTime(), timestamp);
+  }
+});
+test('mobile ViewModel forwards explicit refresh and defaults to cache', async () => {
+  const mobileLoad = loader({ '@mymeteo/data': {} });
+  const { WeatherViewModel } = mobileLoad('entry/src/main/ets/viewmodel/WeatherViewModel.ts');
+  const model = new WeatherViewModel();
+  const flags = [];
+  model.setRepository({ async getWeatherData(selectedCity, force) {
+    assert.strictEqual(selectedCity, city);
+    flags.push(force);
+    return {};
+  } });
+  await model.getWeatherData(city);
+  await model.getWeatherData(city, true);
+  assert.deepEqual(flags, [false, true]);
+});
+
+
+// Execute the production refresh handler without requiring ArkUI on the host.
+const timeLoad = loader({ '@kit.LocalizationKit': { i18n: {
+  System: { getSystemLocale: () => 'pl-PL' },
+  getTimeZone: () => ({ getID: () => 'Europe/Warsaw' })
+} } });
+const { formatWeatherUpdate } = timeLoad('entry/src/main/ets/common/WeatherTime.ts');
+
+function mobileRefreshPage(fetch) {
+  const file = path.join(root, 'entry/src/main/ets/pages/Index.ets');
+  const source = ts.createSourceFile('Index.ts', fs.readFileSync(file, 'utf8').replace('struct Index', 'class Index'),
+    ts.ScriptTarget.ES2020, true);
+  const page = source.statements.find(node => ts.isClassDeclaration(node) && node.name.text === 'Index');
+  const handler = page.members.find(node => ts.isMethodDeclaration(node) && node.name.getText(source) === 'refreshWeather');
+  assert.ok(handler, 'Production refresh handler must exist');
+  const code = ts.transpileModule('class RefreshPage {' + handler.getText(source) + '} module.exports = RefreshPage;', {
+    compilerOptions: { target: ts.ScriptTarget.ES2020 }
+  }).outputText;
+  const module = { exports: {} };
+  vm.runInNewContext(code, { module, ViewState: { SHOW_CITY: 4 }, console: { warn() {} }, formatWeatherUpdate });
+  return Object.assign(new module.exports(), {
+    selectedCity: city, viewState: 4, refreshGeneration: 0, refreshing: true,
+    currentWeather: { temperature: 12 }, forecast: { days: [1] }, updatedAt: 'previous update',
+    viewModel: { getWeatherData: fetch }
+  });
+}
+test('mobile refresh failure stops spinner while keeping weather screen and timestamp', async () => {
+  const page = mobileRefreshPage(async () => { throw new Error('offline'); });
+  const weather = page.currentWeather;
+  const forecast = page.forecast;
+  await page.refreshWeather();
+  assert.strictEqual(page.currentWeather, weather);
+  assert.strictEqual(page.forecast, forecast);
+  assert.equal(page.updatedAt, 'previous update');
+  assert.equal(page.viewState, 4);
+  assert.equal(page.refreshing, false);
+});
+test('mobile refresh success replaces both panels and update time', async () => {
+  const fresh = { currentWeather: {}, forecast: {}, lastUpdated: new Date() };
+  const page = mobileRefreshPage(async (selectedCity, force) => {
+    assert.strictEqual(selectedCity, city);
+    assert.equal(force, true);
+    return fresh;
+  });
+  await page.refreshWeather();
+  assert.strictEqual(page.currentWeather, fresh.currentWeather);
+  assert.strictEqual(page.forecast, fresh.forecast);
+  assert.equal(page.updatedAt, formatWeatherUpdate(fresh.lastUpdated));
+  assert.equal(page.refreshing, false);
+});
+test('late mobile refresh cannot overwrite a different screen or its refresh state', async () => {
+  let finish;
+  const page = mobileRefreshPage(() => new Promise(resolve => { finish = resolve; }));
+  const weather = page.currentWeather;
+  const pending = page.refreshWeather();
+  page.refreshGeneration++;
+  finish({ currentWeather: {}, forecast: {}, lastUpdated: new Date() });
+  await pending;
+  assert.strictEqual(page.currentWeather, weather);
+  assert.equal(page.updatedAt, 'previous update');
+  assert.equal(page.refreshing, true);
+});
+
+test('weather update time uses device time zone and omits invalid dates', () => {
+  const text = formatWeatherUpdate(new Date('2026-10-13T12:40:47Z'));
+  assert.match(text, /13\.10\.2026/);
+  assert.match(text, /14:40:47/);
+  assert.equal(formatWeatherUpdate(null), '');
+  assert.equal(formatWeatherUpdate(new Date(NaN)), '');
 });

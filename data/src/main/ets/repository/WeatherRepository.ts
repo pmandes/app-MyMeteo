@@ -36,7 +36,7 @@ export class WeatherRepository {
    * @param {City} city - The city object containing IDs and coordinates.
    * @returns {Promise<WeatherData>} A promise that resolves to the weather data (current + forecast).
    */
-  async getWeatherData(city: City): Promise<WeatherData> {
+  async getWeatherData(city: City, forceRefresh: boolean = false): Promise<WeatherData> {
     if (!city || city.place_id === undefined || !Number.isFinite(city.lat) || !Number.isFinite(city.lon)) {
       throw new AppError(1003, 'Invalid city or coordinates.');
     }
@@ -44,6 +44,10 @@ export class WeatherRepository {
 
     console.debug(`[${LOG_TAG}] Ensuring city is saved locally (cityId=${city.place_id})`);
     await this.saveCity(city);
+
+    if (forceRefresh) {
+      return this.fetchAndSaveWeatherData(city);
+    }
 
     console.debug(`[${LOG_TAG}] Trying to get local data for cityId=${city.place_id}...`);
     const localData = await this.localDataSource.getWeatherData(city.place_id);

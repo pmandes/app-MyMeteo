@@ -11,10 +11,10 @@ export struct WeekForecastComponent {
 
       if (this.forecast != null) {
 
-        List() {
+        Column() {
           ForEach(this.forecast?.daily?.time, (date: number, index: number) => {
 
-            ListItem() {
+            Column() {
 
               ForecastDayItem({
                 date: date,

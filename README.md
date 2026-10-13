@@ -15,6 +15,13 @@ Both products share the same data and utility modules.
 Both products compile against **OpenHarmony SDK API 23** and require **API 20 or later**.
 The module target is `default` for each product; select the product to choose the UI.
 
+The mobile UI draws its gradient behind translucent system-bar panels. City lists and
+weather panels scroll underneath them; the glass search panel collapses when scrolling
+up and returns when scrolling down. Pull down at the top of a weather page to fetch
+current weather and forecast again, bypassing the 15-minute cache. A failed refresh
+keeps the displayed data and its original update time. The retrieval time appears
+below the forecast.
+
 The wearable PoC obtains location after the permission prompt, reverse-geocodes it with
 Nominatim, then displays current weather. Loading and failure states remain visible;
 permission denial never closes the app. Retry repeats the same existing weather flow.
@@ -69,7 +76,7 @@ Data providers:
 ## Core regression tests
 
 The host tests run the production data layer with substituted platform APIs. They cover
-cache freshness and offline fallback, input validation, weather mapping, HTTP cleanup,
+cache freshness, forced refresh and offline fallback, input validation, weather mapping, HTTP cleanup,
 database cleanup, permission denial and ViewModel initialization.
 
 ```powershell
