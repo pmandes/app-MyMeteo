@@ -78,7 +78,7 @@ struct Index {
         ErrorComponent({ error: this.error });
       }
 
-    }.margin( { bottom: 64  } ).padding( 16 )
+    }.margin( { bottom: 64  } ).padding( 8 )
     .linearGradient({
       direction: GradientDirection.RightBottom,
       colors: [[$r('app.color.background_start'), 0.0], [$r('app.color.background_end'), 1.0]]
