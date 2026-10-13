@@ -136,7 +136,7 @@ export struct CurrentWeatherComponent {
     //.borderRadius(50)
     //.backgroundColor(0x22000000)
     //.shadow(ShadowStyle.OUTER_DEFAULT_SM)
-    .padding({ top: 28, bottom: 28, left: 32, right: 32 })
+    .padding({ top: 32, bottom: 32, left: 36, right: 36 })
     .width("100%").height("100%")
   }
 }
