@@ -898,3 +898,18 @@ test('saved-cities menu opens the saved list from any screen and ignores the pen
   assert.strictEqual(page.savedCities[0], city);
   assert.equal(page.error, undefined);
 });
+
+test('forecast weekdays follow the forecast location, not the device time zone', () => {
+  const { getDayOfWeek } = loader({ '@kit.LocalizationKit': { i18n: { System: { getSystemLocale: () => 'en-US' } } } })(
+    'common/src/main/ets/utils/Tools.ts');
+  // Open-Meteo daily times for Poznan (timezone=auto, Europe/Warsaw, +7200 s): midnights from Wed 14 Oct 2026.
+  const warsaw = [1791928800, 1792015200, 1792101600, 1792188000, 1792274400, 1792360800, 1792447200];
+  const week = ['Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday'];
+  assert.deepEqual(warsaw.map(time => getDayOfWeek(time, 7200)), week);
+  assert.deepEqual(warsaw.map(time => getDayOfWeek(time)), week, 'cached forecasts without an offset');
+  const auckland = Date.UTC(2026, 9, 14, 11) / 1000; // midnight Thu 15 Oct in NZDT (+13 h)
+  assert.equal(getDayOfWeek(auckland, 13 * 3600), 'Thursday');
+  const newYork = Date.UTC(2026, 9, 14, 4) / 1000; // midnight Wed 14 Oct in EDT (-4 h)
+  assert.equal(getDayOfWeek(newYork, -4 * 3600), 'Wednesday');
+  assert.equal(getDayOfWeek(newYork), 'Wednesday');
+});

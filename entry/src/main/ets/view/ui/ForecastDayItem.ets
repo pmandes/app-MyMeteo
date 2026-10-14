@@ -5,6 +5,7 @@ import { WeatherIcon } from './WeatherIcon';
 export struct ForecastDayItem {
 
   @Prop date: number;
+  @Prop utcOffsetSeconds: number | undefined = undefined;
   @Prop precipitationProbability: number;
   @Prop weatherCode: number;
   @Prop maxTemp: number;
@@ -15,7 +16,7 @@ export struct ForecastDayItem {
   build() {
     Row() {
 
-      Text(`${getDayOfWeek(this.date)}`)
+      Text(`${getDayOfWeek(this.date, this.utcOffsetSeconds)}`)
         .fontSize(15)
         .fontColor(Color.White)
         .fontWeight(FontWeight.Bold)

@@ -18,6 +18,7 @@ export struct WeekForecastComponent {
 
               ForecastDayItem({
                 date: date,
+                utcOffsetSeconds: this.forecast?.utc_offset_seconds,
                 precipitationProbability: this.forecast?.daily?.precipitation_probability_max?.[index] ?? 0,
                 weatherCode: this.forecast?.daily?.weather_code?.[index] ?? 0,
                 maxTemp: this.forecast?.daily?.temperature_2m_max?.[index] ?? 0,
