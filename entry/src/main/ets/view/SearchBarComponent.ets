@@ -1,17 +1,11 @@
 import { CommonConstants } from '../common/constants/CommonConstants';
-import { weatherViewModel } from '../viewmodel/WeatherViewModel';
-import { AppError, City } from '@mymeteo/data';
-import { ViewState } from '../pages/Index';
 
 @Component
 export struct SearchBarComponent {
-  @Link cities: City[];
-  @Link viewState: ViewState;
-  @Link error: AppError;
   @State changeValue: string = '';
   @State editing: boolean = false;
   onEditingChange: (editing: boolean) => void = () => {};
-  onSearchStart: () => void = () => {};
+  onSearch: (query: string) => void = () => {};
   controller: SearchController = new SearchController();
 
   build() {
@@ -61,16 +55,6 @@ export struct SearchBarComponent {
     }
     this.getUIContext().getFocusController().clearFocus();
     this.onEditingChange(false);
-    this.onSearchStart();
-    this.viewState = ViewState.LOADING;
-    weatherViewModel.searchCity(query)
-      .then(cities => {
-        this.cities = cities || [];
-        this.viewState = this.cities.length ? ViewState.SHOW_RESULTS : ViewState.IDLE;
-      })
-      .catch((error: AppError) => {
-        this.error = error;
-        this.viewState = ViewState.ERROR;
-      });
+    this.onSearch(query);
   }
 }

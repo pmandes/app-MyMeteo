@@ -4,7 +4,7 @@ import { AppError } from '../common/AppError';
 const MAX_ATTEMPTS = 3;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 5000;
-// Rate limiting and overload on the public APIs usually clear within seconds.
+// Keep interactive requests bounded; do not retry before the server permits it.
 const RETRYABLE_STATUS_CODES: number[] = [429, 502, 503, 504];
 
 export async function makeHttpRequest<T>(url: string, method: http.RequestMethod): Promise<T> {
@@ -21,6 +21,9 @@ export async function makeHttpRequest<T>(url: string, method: http.RequestMethod
       throw new AppError(1002, httpErrorMessage(response.responseCode));
     }
     const delay = retryDelay(response, attempt);
+    if (delay > MAX_RETRY_DELAY_MS) {
+      throw new AppError(1002, httpErrorMessage(response.responseCode));
+    }
     console.warn(`[makeHttpRequest] HTTP ${response.responseCode}, retry ${attempt}/${MAX_ATTEMPTS - 1} in ${delay} ms`);
     await sleep(delay);
   }
@@ -45,11 +48,13 @@ async function sendRequest(url: string, method: http.RequestMethod): Promise<htt
 
 function retryDelay(response: http.HttpResponse, attempt: number): number {
   const retryAfter = headerValue(response.header, 'retry-after');
-  const retryAfterSeconds = retryAfter ? Number(retryAfter) : NaN;
-  const delay = Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0
-    ? retryAfterSeconds * 1000
-    : BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1);
-  return Math.min(delay, MAX_RETRY_DELAY_MS);
+  if (retryAfter) {
+    const value = retryAfter.trim();
+    if (/^\d+$/.test(value)) { return Number(value) * 1000; }
+    const date = /^[A-Za-z]/.test(value) ? Date.parse(value) : NaN;
+    if (Number.isFinite(date)) { return Math.max(0, date - Date.now()); }
+  }
+  return Math.min(BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1), MAX_RETRY_DELAY_MS);
 }
 
 function headerValue(header: Object, name: string): string | undefined {

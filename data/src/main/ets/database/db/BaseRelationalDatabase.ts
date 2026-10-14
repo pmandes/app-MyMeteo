@@ -184,4 +184,24 @@ export abstract class BaseRelationalDatabase {
         });
     });
   }
+
+  /** Delete related records atomically, leaving all records intact on failure. */
+  public async deleteInTransaction(predicates: relationalStore.RdbPredicates[]): Promise<number[]> {
+    const transaction = await this.rdbStore.createTransaction();
+    try {
+      const rows: number[] = [];
+      for (const predicate of predicates) {
+        rows.push(await transaction.delete(predicate));
+      }
+      await transaction.commit();
+      return rows;
+    } catch (error) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackError) {
+        console.error('Unable to roll back history deletion.');
+      }
+      throw new AppError(1103, 'Unable to delete saved city. Try again.');
+    }
+  }
 }
