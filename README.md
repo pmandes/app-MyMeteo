@@ -1,10 +1,24 @@
 # MyMeteo
+
+![Platform](https://img.shields.io/badge/platform-OpenHarmony-0a59f7)
+![Devices](https://img.shields.io/badge/devices-phone%20%7C%20wearable-0a59f7)
+![API](https://img.shields.io/badge/API-20%2B%20(target%2023)-0a59f7)
+![Language](https://img.shields.io/badge/lang-ArkTS%20%2F%20ArkUI-orange)
+![Data](https://img.shields.io/badge/data-Open--Meteo%20%7C%20Nominatim-lightgrey)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
+
 ## Description
 
 MyMeteo is a weather forecast application that allows users to search for and view weather information for different cities, including both current conditions and future predictions.
 The application fetches data from the OpenMeteo API and displays it in a user-friendly format.
 
-![MyMeteo](images/MyMeteo.png)
+<p align="center">
+  <img src="images/MyMeteo-mobile.png" alt="MyMeteo mobile: Warszawa weather and forecast" height="520">
+  &nbsp;
+  <img src="images/MyMeteo-saved-cities.png" alt="MyMeteo mobile: saved cities with weather previews" height="520">
+  &nbsp;
+  <img src="images/MyMeteo-watch.png" alt="MyMeteo wearable: Warszawa current weather" height="260">
+</p>
 
 ## Application functionality
 
@@ -20,35 +34,37 @@ The application fetches data from the OpenMeteo API and displays it in a user-fr
 
 | Product | Entry module | Devices | Scope |
 | --- | --- | --- | --- |
-| `default` | `entry` | Mobile (`default`) | Location weather, city search, daily forecast and saved cities |
+| `default` | `entry` | Mobile (`default`) | Location weather, city search, daily forecast and saved cities with weather previews |
 | `watch` | `watch` | Wearable | Foreground current-location weather PoC |
 
 Both products compile and target **API 23**, with **API 20** as the minimum.
 They share the `data` and `common` libraries; each entry module uses its `default`
 module target. Select the product to choose the mobile or wearable application.
 
-Mobile startup requests foreground location permission (approximate access is sufficient)
-and opens weather and the
-forecast for the device location. If permission, GPS, geocoding or weather retrieval
-fails, it opens the most recently retrieved complete weather stored in the database.
-With no usable saved weather, it opens the empty search screen. Manual search takes
-precedence over a late startup location response.
+Mobile startup requests foreground location permission (approximate access is
+sufficient) and opens weather and the forecast for the device location. If permission,
+GPS, geocoding or weather retrieval fails, it opens the most recently retrieved
+complete weather stored in the database. With no usable saved weather, it opens the
+empty search screen. Manual search takes precedence over a late startup location
+response.
 
-The mobile background extends beneath translucent system bars. The status bar and
-compact search panel share darker glass; city lists and weather panels scroll beneath
-them. The search panel collapses on upward scrolling and returns on downward scrolling.
-Search results and saved cities use the same translucent cards and soft shadows as
-weather panels. White text and darker panels improve contrast.
+The mobile background extends beneath translucent system bars. The status bar, with
+white text, and the compact search panel share darker glass without a separator; city
+lists and weather panels scroll beneath them. The search panel collapses on upward
+scrolling and returns on downward scrolling. Search results and saved cities use the
+same translucent cards and soft shadows as weather panels. White text and darker
+panels improve contrast.
 
-Search history is ordered by the most recent city visit, newest first. Each history
-card shows the weather icon and temperature last saved for that city, read only from
-the database regardless of age; cities without saved current weather show no preview.
-Long-press a
-saved city to open the native **Delete?** dialog. **Cancel** keeps the entry; **Delete**
-removes the city and its cached weather/forecast in one database transaction. On a
-database error, the entry remains visible and a toast explains the failure. Pending
-requests cannot restore deleted data; selecting the city again intentionally saves it.
-Search and weather responses are applied only while their request remains current.
+Saved cities are ordered by the most recent visit, newest first. The menu button to
+the right of the search field opens this list from any screen. Each card shows the
+weather icon and temperature last saved for that city, read only from the database
+regardless of age; cities without saved current weather show no preview. Long-press a
+saved city to open the native **Delete?** dialog. **Cancel** keeps the entry;
+**Delete** removes the city and its cached weather/forecast in one database
+transaction. On a database error, the entry remains visible and a toast explains the
+failure. Pending requests cannot restore deleted data; selecting the city again
+intentionally saves it. Search and weather responses are applied only while their
+request remains current.
 
 Pull down at the top of the mobile weather screen to bypass the 15-minute cache and
 fetch current weather and forecast again. A failed refresh keeps the displayed data
@@ -419,7 +435,7 @@ export class DBConfig {
     sqlCreate: 'CREATE TABLE IF NOT EXISTS tbl_city(' +
       'id INTEGER PRIMARY KEY,' +
       'name TEXT, ' +
-      'display_name TEXT,' +
+      'display_name TEXT, ' +
       'latitude REAL,' +
       'longitude REAL,' +
       'timestamp DATETIME)',
@@ -442,7 +458,7 @@ export class MyMeteoDB extends BaseRelationalDatabase {
     super(rdbStore);
   }
 
-  public static async getInstance(context: Context): Promise<MyMeteoDB> {
+  public static async getInstance(context: common.Context): Promise<MyMeteoDB> {
     if (!MyMeteoDB.instance) {
       const store = await relationalStore.getRdbStore(context, DBConfig.STORE_CONFIG);
       await MyMeteoDB.initializeTables(store);
@@ -892,12 +908,18 @@ In this project, the `MVVM` (Model-View-ViewModel) pattern is used to separate c
 
   The `WeatherViewModel` is responsible for:
 
-  - Retrieving data from the model by calling methods on the repository (e.g., `getSavedCities()`, `searchCity()`, `getWeatherData(city)`).
+  - Retrieving data from the model by calling methods on the repository (e.g., `getSavedCities()`, `searchCity()`, `getWeatherData(city)`, `getStartupWeather()`).
+  - Reading saved weather previews for saved cities (`getSavedCityWeather()`) and deleting saved cities (`deleteSavedCity()`).
   - Managing the application state (for example, keeping track of the current view state, list of cities, current weather, and errors).
   - Delegating user actions to the repository.
 
   ```typescript
-  import { AppError, City, CityWeatherData, WeatherData, WeatherRepository } from '@mymeteo/data';
+  import { AppError, City, CityWeatherData, CurrentWeather, WeatherData, WeatherRepository } from '@mymeteo/data';
+
+  export interface SavedCityWeather {
+    cityId: number;
+    currentWeather: CurrentWeather;
+  }
 
   export class WeatherViewModel {
     private repository?: WeatherRepository;
@@ -919,6 +941,23 @@ In this project, the `MVVM` (Model-View-ViewModel) pattern is used to separate c
 
     async deleteSavedCity(city: City): Promise<void> {
       await this.getRepository().deleteSavedCity(city);
+    }
+
+    /** History previews read only saved data, regardless of its age. */
+    async getSavedCityWeather(cities: City[]): Promise<SavedCityWeather[]> {
+      const saved: SavedCityWeather[] = [];
+      for (const city of cities) {
+        try {
+          const data = await this.getRepository().getSavedWeatherData(city.place_id);
+          if (data.currentWeather?.current) {
+            saved.push({ cityId: city.place_id, currentWeather: data.currentWeather });
+          }
+        } catch (error) {
+          // An absent or unreadable cache must not hide the saved city itself.
+          console.warn('Unable to read history weather for city ' + city.place_id);
+        }
+      }
+      return saved;
     }
 
     async searchCity(query: string): Promise<City[]> {
@@ -960,13 +999,13 @@ In this project, the `MVVM` (Model-View-ViewModel) pattern is used to separate c
 
    The View (e.g., the main component `Index`) is responsible for rendering the user interface and handling user interactions. It:
 
-  - Maintains reactive state variables (using` @State`) to reflect the current UI state, such as `viewState`, `cities`, `selectedCity`, `currentWeather`, `forecast`, and `error`.
+  - Maintains reactive state variables (using `@State`) to reflect the current UI state, such as `viewState`, `cities`, `savedCities`, `savedCityWeather`, `selectedCity`, `currentWeather`, `forecast`, and `error`.
   - Calls methods on the ViewModel to retrieve data (for instance, invoking `getSavedCities()` or `getWeatherData()`).
   - Dynamically renders components (like `SearchBarComponent`, `ResultsComponent`, `CityDetailsComponent`, `LoadingComponent`, and `ErrorComponent`) based on the current `viewState`.
 
-The following simplified layout illustrates the original View/MVVM separation.
-The current `entry/src/main/ets/pages/Index.ets` also handles location-based startup,
-scrolling glass overlays, forced refresh, preserving existing weather on refresh
+The following simplified layout shows how `Index` wires the View to the ViewModel.
+The full `entry/src/main/ets/pages/Index.ets` also handles location-based startup,
+scrolling glass overlays, pull-to-refresh, preserving existing weather on refresh
 failure and asynchronous background transitions. It owns search/weather requests and
 ignores superseded responses; child components forward selection, search and confirmed
 deletion through callbacks. Its startup calls
@@ -978,63 +1017,50 @@ deletion through callbacks. Its startup calls
 struct Index {
   @State viewModel: WeatherViewModel = weatherViewModel;
   @State viewState: ViewState = ViewState.IDLE;
+  @State savedCities: City[] = [];
+  @State savedCityWeather: SavedCityWeather[] = [];
 
   /// ... other State variables
 
-  // Called when the Index page is about to appear;
-  // Then, it initiates the fetching of saved cities to update the UI with the latest local city data.
+  // Opens location weather, then the latest saved weather, then the empty search screen.
   aboutToAppear(): void {
-    console.debug("Index page is about to appear...");
-    this.fetchSavedCities();
+    this.loadInitialWeather();
   }
 
-  // Constructs and returns the UI layout based on the current state.
-  // Dynamically renders components (e.g., search bar, results, city details, loading, error) according to 'viewState'.
+  // Renders components according to 'viewState'. Children receive data as props and
+  // report user actions through callbacks; the page owns every request.
   build() {
-    Column() {
-
-      SearchBarComponent({
-        viewState: this.viewState,
-        cities: this.cities,
-        error: this.error
-      })
-
-      if (this.viewState == ViewState.IDLE || this.viewState == ViewState.SHOW_RESULTS) {
-
-        ResultsComponent({
-          viewState: this.viewState,
-          results: this.cities,
-          savedCities: this.savedCities,
-          selectedCity: this.selectedCity,
-          currentWeather: this.currentWeather,
-          forecast: this.forecast
-        });
-
-      } else if (this.viewState == ViewState.SHOW_CITY) {
-
-        CityDetailsComponent({
-          viewState: this.viewState,
-          city: this.selectedCity,
-          currentWeather: this.currentWeather,
-          forecast: this.forecast
-        });
-
-      } else if (this.viewState == ViewState.LOADING) {
-
-        LoadingComponent();
-
-      } else if (this.viewState == ViewState.ERROR) {
-
-        ErrorComponent({ error: this.error });
-
+    Stack({ alignContent: Alignment.Top }) {
+      Column() {
+        if (this.viewState === ViewState.IDLE || this.viewState === ViewState.SHOW_RESULTS) {
+          ResultsComponent({ viewState: this.viewState, results: this.cities, savedCities: this.savedCities,
+            savedCityWeather: this.savedCityWeather, historyBusy: this.historyBusy,
+            onCitySelect: (city: City) => this.selectCity(city),
+            onDeleteCity: (city: City) => this.deleteSavedCity(city) })
+        } else if (this.viewState === ViewState.SHOW_CITY) {
+          CityDetailsComponent({ city: this.selectedCity, currentWeather: this.currentWeather,
+            forecast: this.forecast, updatedAt: this.updatedAt })
+        } else if (this.viewState === ViewState.LOADING) {
+          LoadingComponent()
+        } else if (this.viewState === ViewState.ERROR) {
+          ErrorComponent({ error: this.error })
+        }
       }
+
+      SearchBarComponent({ onSearch: (query: string) => this.searchCities(query) })
     }
   }
 
-  // Asynchronously fetches the list of saved cities from the global weatherViewModel
-  // and updates the 'savedCities' state, triggering an automatic UI refresh when the data is loaded.
-  async fetchSavedCities() {
-    this.savedCities = await weatherViewModel.getSavedCities();
+  // Loads saved cities, then their saved weather previews; a newer read or a deletion
+  // invalidates the older one.
+  async fetchSavedCities(): Promise<void> {
+    const generation = ++this.historyGeneration;
+    const cities = await this.viewModel.getSavedCities();
+    if (generation !== this.historyGeneration) { return; }
+    this.savedCities = cities;
+    const weather = await this.viewModel.getSavedCityWeather(cities);
+    if (generation !== this.historyGeneration) { return; }
+    this.savedCityWeather = weather;
   }
 }
 ```
@@ -1048,6 +1074,9 @@ Tracks the current view mode (e.g., `IDLE`, `LOADING`, `ERROR`, `SHOW_RESULTS`, 
 
 - `cities` and `savedCities`:
 Arrays that hold the list of cities from search results and those saved locally.
+
+- `savedCityWeather`:
+Saved current weather shown as a preview on each saved city.
 
 - `selectedCity`, `currentWeather`, `forecast`:
 Hold detailed data for the selected city.
@@ -1119,7 +1148,7 @@ The data module is packaged as `@mymeteo/data` via its `oh-package.json5` file:
 {
   "name": "@mymeteo/data",
   "version": "1.0.0",
-  "description": "Data module for MyMeteo app providing access to different data sources via Repository pattern",
+  "description": "Data module for MyMeteo app providing access to different data sources via Repository pattern.",
   "main": "Index.ts",
   "dependencies": {},
 
@@ -1137,10 +1166,11 @@ The entry module contains the UI layer and associated ViewModels. To use the cla
 {
   "name": "entry",
   "version": "1.0.0",
-  "description": "Entry module with presentation layer.",
-  "main": "",
+  "description": "Entry module with presentation (UI) layer.",
+  "main": "Index.ts",
   "dependencies": {
-    "@mymeteo/data": "../data"
+    "@mymeteo/data": "../data",
+    "@mymeteo/common": "../common"
   },
 
   ...
@@ -1260,8 +1290,12 @@ Below is a simplified file structure of the project illustrating the key directo
 │               │   ├── SearchBarComponent.ets
 │               │   ├── ResultsComponent.ets
 │               │   ├── CityDetailsComponent.ets
-│               │   ├── LoadingComponent.ets
-│               │   └── ErrorComponent.ets
+│               │   ├── CurrentWeatherComponent.ets
+│               │   ├── WeekForecastComponent.ets
+│               │   └── /ui                   // City card, icons, loading and error views
+│               │       ├── CityInfoItem.ets
+│               │       ├── LoadingComponent.ets
+│               │       └── ErrorComponent.ets
 │               └── /viewmodel
 │                   └── WeatherViewModel.ts
 │
@@ -1340,8 +1374,10 @@ Artifacts are named `MyMeteo-default` and `MyMeteo-watch`.
 ## Core regression tests
 
 The host tests run the production data layer with substituted platform APIs. They cover
-cache freshness, forced refresh and offline fallback, input validation, weather mapping, HTTP cleanup,
-database cleanup, permission denial and ViewModel initialization.
+cache freshness, forced refresh and offline fallback, input validation, weather mapping, HTTP cleanup
+and retries, database cleanup, permission handling, ViewModel initialization, location startup,
+saved-city ordering, previews and transactional deletion, superseded responses and background
+transitions.
 
 ```powershell
 npm install --no-save --package-lock=false typescript@4.9.5
