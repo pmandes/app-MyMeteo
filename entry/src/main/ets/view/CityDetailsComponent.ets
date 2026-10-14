@@ -24,7 +24,7 @@ export struct CityDetailsComponent {
             .textShadow({ color: '#33182431', offsetX: 0, offsetY: 1, radius: 3 })
             .textAlign(TextAlign.Center)
             .width('100%')
-            .margin({ top: 20, bottom: 12 })
+            .margin({ top: 20, bottom: 62 })
         }
       }
     }.width('100%').padding({ left: 12, right: 12, bottom: 12 })

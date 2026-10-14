@@ -294,6 +294,7 @@ struct Index {
 
       Stack({ alignContent: Alignment.Top }) {
         SearchBarComponent({ onSearch: (query: string) => this.searchCities(query),
+          onShowSavedCities: () => this.showSavedCities(),
           onEditingChange: (editing: boolean) => {
             this.searchEditing = editing;
             if (editing) { this.searchCollapse = 0; }
@@ -307,7 +308,6 @@ struct Index {
       Column() {
         Row() {}.id('status-glass').width('100%').height(this.getUIContext().px2vp(this.topPx))
           .backgroundColor(CommonConstants.SEARCH_GLASS_COLOR).backdropBlur(20)
-          .border({ width: { bottom: 1 }, color: '#55FFFFFF' })
           .hitTestBehavior(HitTestMode.None)
         Blank().hitTestBehavior(HitTestMode.None)
         Row() {}.id('navigation-glass').width('100%').height(this.getUIContext().px2vp(this.bottomPx))
@@ -334,6 +334,14 @@ struct Index {
       return true;
     }
     return false;
+  }
+
+  /** The search-bar menu opens saved cities from any screen; leaving a screen invalidates its requests. */
+  showSavedCities(): Promise<void> {
+    this.refreshGeneration++;
+    this.cities = [];
+    this.viewState = ViewState.IDLE;
+    return this.fetchSavedCities();
   }
 
   async fetchSavedCities(): Promise<void> {

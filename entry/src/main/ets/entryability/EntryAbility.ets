@@ -23,8 +23,7 @@ export default class EntryAbility extends UIAbility {
       this.mainWindow = windowStage.getMainWindowSync();
       await this.mainWindow.setWindowLayoutFullScreen(true);
       await this.mainWindow.setWindowBackgroundColor('#FFDCE8F5');
-      await this.mainWindow.setWindowSystemBarProperties({ statusBarColor: '#00000000',
-        navigationBarColor: '#00000000', statusBarContentColor: '#182F48', navigationBarContentColor: '#182F48' });
+      await this.applySystemBarStyle();
       this.updateInsets();
       this.mainWindow.on('avoidAreaChange', this.updateInsets);
     } catch (error) {
@@ -47,7 +46,17 @@ export default class EntryAbility extends UIAbility {
         hilog.error(0x0000, 'EntryAbility', 'Cannot load main page: %{public}s', JSON.stringify(error));
       }
       this.updateInsets();
+      // Loading the page restores the default bar style, so apply ours again.
+      this.applySystemBarStyle().catch((styleError: Error) => {
+        hilog.warn(0x0000, 'EntryAbility', 'System bar styling failed: %{public}s', JSON.stringify(styleError));
+      });
     });
+  }
+
+  /** Transparent bars; white status-bar text over the weather backgrounds. */
+  private async applySystemBarStyle(): Promise<void> {
+    await this.mainWindow?.setWindowSystemBarProperties({ statusBarColor: '#00000000',
+      navigationBarColor: '#00000000', statusBarContentColor: '#FFFFFF', navigationBarContentColor: '#182F48' });
   }
 
   onWindowStageDestroy(): void {

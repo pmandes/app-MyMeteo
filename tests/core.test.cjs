@@ -602,7 +602,7 @@ function interactivePage(model) {
     historyBusy: false, savedCities: [city], savedCityWeather: [], cities: [], getUIContext: () => ({
       getPromptAction: () => ({ showToast: options => { page.toast = options.message; } })
     }) };
-  for (const method of ['searchCities', 'selectCity', 'deleteSavedCity', 'fetchSavedCities', 'aboutToDisappear']) {
+  for (const method of ['searchCities', 'selectCity', 'deleteSavedCity', 'fetchSavedCities', 'showSavedCities', 'aboutToDisappear']) {
     page[method] = mobilePageHandler(method, { AppError })[method];
   }
   return page;
@@ -881,4 +881,20 @@ test('deleting a saved city also removes its weather preview', async () => {
   page.savedCityWeather = [1, 2].map(cityId => ({ cityId, currentWeather: { current: {} } }));
   await page.deleteSavedCity(city);
   assert.deepEqual(page.savedCityWeather.map(saved => saved.cityId), [2]);
+});
+
+test('saved-cities menu opens the saved list from any screen and ignores the pending search', async () => {
+  const pending = deferred();
+  const page = interactivePage({ searchCity: () => pending.promise, getSavedCities: async () => [city],
+    getSavedCityWeather: async () => [] });
+  const search = page.searchCities('Krakow');
+  page.selectedCity = city;
+  await page.showSavedCities();
+  pending.resolve([{ ...city, name: 'Late result' }]);
+  await search;
+  assert.equal(page.viewState, 0);
+  assert.equal(page.cities.length, 0);
+  assert.equal(page.savedCities.length, 1);
+  assert.strictEqual(page.savedCities[0], city);
+  assert.equal(page.error, undefined);
 });
