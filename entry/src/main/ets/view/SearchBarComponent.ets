@@ -6,38 +6,50 @@ export struct SearchBarComponent {
   @State editing: boolean = false;
   onEditingChange: (editing: boolean) => void = () => {};
   onSearch: (query: string) => void = () => {};
+  onShowSavedCities: () => void = () => {};
   controller: SearchController = new SearchController();
 
   build() {
     Column() {
-      Stack({ alignContent: Alignment.Start }) {
-      Search({ value: this.changeValue, placeholder: CommonConstants.SEARCH_PLACEHOLDER, controller: this.controller })
-        .id('city-search')
-        .width('100%').height(46)
-        .margin(0)
-        .border({ radius: 18, width: 1, color: '#60FFFFFF' })
-        .backgroundColor('#10FFFFFF')
-        .placeholderFont({ size: 15, weight: FontWeight.Normal, family: 'sans-serif' })
-        .textFont({ size: 15, weight: FontWeight.Normal, family: 'sans-serif' })
-        .fontColor(this.editing ? Color.White : Color.Transparent)
-        .placeholderColor(this.editing ? '#E6FFFFFF' : Color.Transparent)
-        .caretStyle({ color: Color.White, width: 1.5 })
-        .searchIcon({ size: 20, color: '#E6FFFFFF' })
-        .cancelButton({ style: CancelButtonStyle.INPUT, icon: { size: 18, color: '#E6FFFFFF' } })
-        .onChange((value: string) => { this.changeValue = value; })
-        .onEditChange((editing: boolean) => { this.editing = editing; this.onEditingChange(editing); })
-        .onSubmit((value: string) => this.handleOnSubmit(value))
-        if (!this.editing) {
-          // Search has no text-shadow API; decorate only its unfocused text.
-          // The native field retains focus, editing, selection and accessibility.
-          Text(this.changeValue || CommonConstants.SEARCH_PLACEHOLDER)
-            .fontSize(15).fontWeight(FontWeight.Normal).fontFamily('sans-serif')
-            .fontColor(this.changeValue ? Color.White : '#E6FFFFFF')
-            .textShadow({ color: '#66182431', offsetX: 0, offsetY: 1, radius: 2 })
-            .width('100%').padding({ left: 42, right: 40 })
-            .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
-            .hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
+      Row({ space: 8 }) {
+        Stack({ alignContent: Alignment.Start }) {
+          Search({ value: this.changeValue, placeholder: CommonConstants.SEARCH_PLACEHOLDER, controller: this.controller })
+            .id('city-search')
+            .width('100%').height(46)
+            .margin(0)
+            .border({ radius: 18, width: 1, color: '#60FFFFFF' })
+            .backgroundColor('#10FFFFFF')
+            .placeholderFont({ size: 15, weight: FontWeight.Normal, family: 'sans-serif' })
+            .textFont({ size: 15, weight: FontWeight.Normal, family: 'sans-serif' })
+            .fontColor(this.editing ? Color.White : Color.Transparent)
+            .placeholderColor(this.editing ? '#E6FFFFFF' : Color.Transparent)
+            .caretStyle({ color: Color.White, width: 1.5 })
+            .searchIcon({ size: 20, color: '#E6FFFFFF' })
+            .cancelButton({ style: CancelButtonStyle.INPUT, icon: { size: 18, color: '#E6FFFFFF' } })
+            .onChange((value: string) => { this.changeValue = value; })
+            .onEditChange((editing: boolean) => { this.editing = editing; this.onEditingChange(editing); })
+            .onSubmit((value: string) => this.handleOnSubmit(value))
+          if (!this.editing) {
+            // Search has no text-shadow API; decorate only its unfocused text.
+            // The native field retains focus, editing, selection and accessibility.
+            Text(this.changeValue || CommonConstants.SEARCH_PLACEHOLDER)
+              .fontSize(15).fontWeight(FontWeight.Normal).fontFamily('sans-serif')
+              .fontColor(this.changeValue ? Color.White : '#E6FFFFFF')
+              .textShadow({ color: '#66182431', offsetX: 0, offsetY: 1, radius: 2 })
+              .width('100%').padding({ left: 42, right: 40 })
+              .maxLines(1).textOverflow({ overflow: TextOverflow.Ellipsis })
+              .hitTestBehavior(HitTestMode.None).accessibilityLevel('no')
+          }
+        }.layoutWeight(1).height(46)
+
+        Button({ type: ButtonType.Circle, stateEffect: true }) {
+          Image($r('app.media.ic_menu')).width(24).height(24).fillColor('#E6FFFFFF')
         }
+        .id('saved-cities-button')
+        .width(46).height(46)
+        .backgroundColor(Color.Transparent)
+        .accessibilityText('Saved cities')
+        .onClick(() => this.handleShowSavedCities())
       }.width('100%').height(46)
     }
     .width('100%').height(CommonConstants.SEARCH_PANEL_HEIGHT)
@@ -46,6 +58,12 @@ export struct SearchBarComponent {
     .backdropBlur(20)
     .border({ width: { bottom: 1 }, color: '#55FFFFFF' })
     .shadow({ radius: 8, color: '#18182431', offsetX: 0, offsetY: 3 })
+  }
+
+  handleShowSavedCities(): void {
+    this.getUIContext().getFocusController().clearFocus();
+    this.onEditingChange(false);
+    this.onShowSavedCities();
   }
 
   handleOnSubmit(value: string): void {

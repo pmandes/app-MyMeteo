@@ -43,14 +43,6 @@ export struct ResultsComponent {
 
       if (this.viewState == ViewState.IDLE) {
         if (this.savedCities.length > 0) {
-          Text("Search history:")
-            .fontColor(Color.White)
-            .fontSize(18)
-            .fontWeight(FontWeight.Bold)
-            .textShadow({ color: '#99000000', offsetX: 0, offsetY: 1, radius: 4 })
-            .alignSelf(ItemAlign.Start)
-            .margin({top: 16})
-
           Column() {
             ForEach(this.savedCities, (item: City) => {
               Column() {
@@ -78,7 +70,7 @@ export struct ResultsComponent {
     if (this.historyBusy || this.viewState !== ViewState.IDLE) { return; }
     this.getUIContext().showAlertDialog({
       title: 'Delete?',
-      message: `Remove ${city.name || city.display_name || 'this city'} from search history?`,
+      message: `Remove ${city.name || city.display_name || 'this city'} from saved cities?`,
       primaryButton: { value: 'Cancel', defaultFocus: true, action: () => {} },
       secondaryButton: { value: 'Delete', fontColor: '#C84040', action: () => this.onDeleteCity(city) }
     });
