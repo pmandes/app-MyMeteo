@@ -1379,8 +1379,8 @@ Artifacts are named `MyMeteo-default` and `MyMeteo-watch`.
 The host tests run the production data layer with substituted platform APIs. They cover
 cache freshness, forced refresh and offline fallback, input validation, weather mapping, HTTP cleanup
 and retries, database cleanup, permission handling, ViewModel initialization, location startup,
-saved-city ordering, previews and transactional deletion, superseded responses and background
-transitions.
+saved-city ordering, previews and transactional deletion, superseded responses, forecast weekdays
+and background transitions.
 
 ```powershell
 npm install --no-save --package-lock=false typescript@4.9.5
