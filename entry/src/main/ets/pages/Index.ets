@@ -4,7 +4,7 @@ import { CityDetailsComponent } from '../view/CityDetailsComponent';
 import { LoadingComponent } from '../view/ui/LoadingComponent';
 import { AppError, City, CurrentWeather, Forecast } from '@mymeteo/data';
 import { ErrorComponent } from '../view/ui/ErrorComponent';
-import { weatherViewModel, WeatherViewModel } from '../viewmodel/WeatherViewModel';
+import { SavedCityWeather, weatherViewModel, WeatherViewModel } from '../viewmodel/WeatherViewModel';
 import { formatWeatherUpdate } from '../common/WeatherTime';
 import { common, Permissions } from '@kit.AbilityKit';
 import { PermissionManager, backgroundForWeather, WeatherBackground } from '@mymeteo/common';
@@ -21,6 +21,8 @@ struct Index {
   @State @Watch('onViewStateChange') viewState: ViewState = ViewState.IDLE;
   @State cities: City[] = [];
   @State savedCities: City[] = [];
+  @State savedCityWeather: SavedCityWeather[] = [];
+  @State historyBusy: boolean = false;
   @State selectedCity?: City = undefined;
   @State @Watch('onWeatherChange') currentWeather?: CurrentWeather = undefined;
   @State forecast?: Forecast = undefined;
@@ -41,6 +43,7 @@ struct Index {
   private scroller: Scroller = new Scroller();
   private searchEditing: boolean = false;
   private refreshGeneration: number = 0;
+  private historyGeneration: number = 0;
 
   aboutToAppear(): void {
     this.loadInitialWeather();
@@ -48,6 +51,7 @@ struct Index {
 
   aboutToDisappear(): void {
     this.refreshGeneration++;
+    this.historyGeneration++;
     this.backgroundGeneration++;
   }
 
@@ -55,8 +59,11 @@ struct Index {
     this.viewState = ViewState.LOADING;
     const generation = this.refreshGeneration;
     try {
-      this.savedCities = await this.viewModel.getSavedCities();
+      const cities = await this.viewModel.getSavedCities();
+      if (generation !== this.refreshGeneration) { return; }
+      this.savedCities = cities;
     } catch (error) {
+      if (generation !== this.refreshGeneration) { return; }
       this.savedCities = [];
     }
     if (generation !== this.refreshGeneration) { return; }
@@ -157,6 +164,62 @@ struct Index {
     }
   }
 
+  async searchCities(query: string): Promise<void> {
+    this.viewState = ViewState.LOADING;
+    this.refreshing = false;
+    this.refreshDragging = false;
+    const generation = ++this.refreshGeneration;
+    try {
+      const cities = await this.viewModel.searchCity(query);
+      if (generation !== this.refreshGeneration) { return; }
+      this.cities = cities || [];
+      this.viewState = this.cities.length ? ViewState.SHOW_RESULTS : ViewState.IDLE;
+      if (!this.cities.length) { this.fetchSavedCities(); }
+    } catch (error) {
+      if (generation !== this.refreshGeneration) { return; }
+      this.error = error instanceof AppError ? error : new AppError(1001, 'Unable to search cities.');
+      this.viewState = ViewState.ERROR;
+    }
+  }
+
+  async selectCity(city: City): Promise<void> {
+    if (this.historyBusy) { return; }
+    this.selectedCity = city;
+    this.viewState = ViewState.LOADING;
+    const generation = ++this.refreshGeneration;
+    try {
+      const data = await this.viewModel.getWeatherData(city);
+      if (generation !== this.refreshGeneration) { return; }
+      if (!data.currentWeather || !data.forecast) {
+        throw new AppError(1003, 'Weather data is incomplete. Try again.');
+      }
+      this.currentWeather = data.currentWeather;
+      this.forecast = data.forecast;
+      this.updatedAt = formatWeatherUpdate(data.lastUpdated);
+      this.viewState = ViewState.SHOW_CITY;
+    } catch (error) {
+      if (generation !== this.refreshGeneration) { return; }
+      this.error = error instanceof AppError ? error : new AppError(1001, 'Unable to load weather.');
+      this.viewState = ViewState.ERROR;
+    }
+  }
+
+  async deleteSavedCity(city: City): Promise<void> {
+    if (this.historyBusy || this.viewState !== ViewState.IDLE) { return; }
+    this.historyBusy = true;
+    this.historyGeneration++;
+    try {
+      await this.viewModel.deleteSavedCity(city);
+      this.historyGeneration++;
+      this.savedCities = this.savedCities.filter((saved: City) => saved.place_id !== city.place_id);
+      this.savedCityWeather = this.savedCityWeather.filter((saved: SavedCityWeather) => saved.cityId !== city.place_id);
+    } catch (error) {
+      this.getUIContext().getPromptAction().showToast({ message: 'Unable to delete saved city. Try again.' });
+    } finally {
+      this.historyBusy = false;
+    }
+  }
+
   @Builder
   refreshIndicator() {
     Stack() {
@@ -173,8 +236,9 @@ struct Index {
       Column() {
         if (this.viewState === ViewState.IDLE || this.viewState === ViewState.SHOW_RESULTS) {
           ResultsComponent({ viewState: this.viewState, results: this.cities, savedCities: this.savedCities,
-            selectedCity: this.selectedCity, currentWeather: this.currentWeather, forecast: this.forecast,
-            error: this.error, updatedAt: this.updatedAt })
+            savedCityWeather: this.savedCityWeather,
+            historyBusy: this.historyBusy, onCitySelect: (city: City) => this.selectCity(city),
+            onDeleteCity: (city: City) => this.deleteSavedCity(city) })
         } else if (this.viewState === ViewState.SHOW_CITY) {
           CityDetailsComponent({ city: this.selectedCity, currentWeather: this.currentWeather,
             forecast: this.forecast, updatedAt: this.updatedAt })
@@ -229,10 +293,7 @@ struct Index {
       }
 
       Stack({ alignContent: Alignment.Top }) {
-        SearchBarComponent({ viewState: this.viewState, cities: this.cities, error: this.error,
-          onSearchStart: () => {
-            this.refreshGeneration++; this.refreshing = false; this.refreshDragging = false;
-          },
+        SearchBarComponent({ onSearch: (query: string) => this.searchCities(query),
           onEditingChange: (editing: boolean) => {
             this.searchEditing = editing;
             if (editing) { this.searchCollapse = 0; }
@@ -261,23 +322,33 @@ struct Index {
   }
 
   onBackPress(): boolean | void {
-    if (this.viewState === ViewState.SHOW_CITY) {
+    if (this.viewState === ViewState.SHOW_CITY || this.viewState === ViewState.LOADING ||
+      this.viewState === ViewState.ERROR) {
       this.viewState = this.cities.length ? ViewState.SHOW_RESULTS : ViewState.IDLE;
       if (!this.cities.length) { this.fetchSavedCities(); }
       return true;
     }
     if (this.viewState === ViewState.SHOW_RESULTS) {
-      this.fetchSavedCities();
       this.viewState = ViewState.IDLE;
+      this.fetchSavedCities();
       return true;
     }
     return false;
   }
 
   async fetchSavedCities(): Promise<void> {
+    const generation = ++this.historyGeneration;
+    const requestGeneration = this.refreshGeneration;
     try {
-      this.savedCities = await weatherViewModel.getSavedCities();
+      const cities = await this.viewModel.getSavedCities();
+      if (generation !== this.historyGeneration) { return; }
+      this.savedCities = cities;
+      this.savedCityWeather = [];
+      const weather = await this.viewModel.getSavedCityWeather(cities);
+      if (generation !== this.historyGeneration) { return; }
+      this.savedCityWeather = weather;
     } catch (error) {
+      if (generation !== this.historyGeneration || requestGeneration !== this.refreshGeneration) { return; }
       this.error = error instanceof AppError ? error : new AppError(1100, 'Unable to load saved cities.');
       this.viewState = ViewState.ERROR;
     }

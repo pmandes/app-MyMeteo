@@ -21,11 +21,16 @@ Both products use API 23 for compilation/targeting and API 20 as their minimum.
 - Closed RDB result sets even when row mapping throws.
 - Corrected the database context import and removed the duplicate wearable float resource.
 - Isolated the wearable HAP from the mobile build through product/module mappings.
+- Retried HTTP 429/502/503/504 (three attempts, exponential backoff); `Retry-After` seconds and HTTP dates are honored, and a wait above five seconds returns a readable error instead of retrying early. Open-Meteo intermittently answers 503 "The service is overloaded".
+- Accepted approximate location access when precise location is declined.
+- Ordered search history by the most recent visit; history cards preview the last saved weather icon and temperature without network requests.
+- Added long-press deletion of saved cities behind a native **Delete?** confirmation. The city and its cached weather and forecast are removed in one transaction; a failure rolls back and keeps the entry with a toast.
+- Serialized cache writes and invalidated requests started before a deletion, so late responses cannot recreate deleted rows. Superseded search, weather and history responses no longer replace newer screens.
 
 ## Verification
 
 - [GitHub Actions verification of the merge](https://github.com/pmandes/app-MyMeteo/actions/runs/38399555081) passed core tests and both product builds, producing signed mobile and watch HAP artifacts.
-- 44 host regression tests pass against production code with substituted platform APIs. Refresh checks cover bypassing a fresh cache, preserving cached and displayed weather/timestamps on failure, stopping the spinner, forwarding the mobile refresh flag, ignoring a late response after leaving the page, and formatting retrieval time in the device time zone.
+- 63 host regression tests pass against production code with substituted platform APIs. HTTP checks cover retry until success, giving up after three attempts, `Retry-After` seconds/dates/malformed values and the five-second wait budget. History checks cover newest-first reads, confirmation before deletion, transactional deletion with rollback, late reads/responses after deletion, cache-write serialization, superseded searches and city requests, and previews that read saved weather only and follow the latest history read. Refresh checks cover bypassing a fresh cache, preserving cached and displayed weather/timestamps on failure, stopping the spinner, forwarding the mobile refresh flag, ignoring a late response after leaving the page, and formatting retrieval time in the device time zone.
 - Mobile startup tests cover location permission denial/errors, successful location weather, GPS/geocoding/weather failures, selecting the latest usable saved weather, unreadable records, empty history, unavailable database and protection of manual search from a late location response.
 - Background tests run the production handlers in both products and cover weather-code families, waiting for image readiness, the 2.4-second fade, keeping the previous background until completion, skipping fades within the same family and ignoring stale animation completion callbacks.
 - Mobile startup opened current weather and forecast for the existing emulator's location (Covent Garden); the clear weather background rendered behind both cards. A refresh updated the retrieval time without restarting the background transition. A captured pull gesture confirmed the white spinner is visible below the search overlay.
@@ -46,6 +51,8 @@ Both products use API 23 for compilation/targeting and API 20 as their minimum.
 - Softened text shadows with a translucent dark blue, no horizontal offset and a small blur in both UIs.
 - Replaced the green mobile and red wearable startup backgrounds with light blue colors matching their existing UIs.
 - Emulator 6.1 does not support the CLI geolocation injection command; the existing device location was used.
+- On Pura 80 Pro, search history showed the saved weather icon and temperature on every card. Opening Gdańsk moved it to the top of the history. Long-pressing Kraków opened **Delete?** with the city name; **Cancel** kept it, **Delete** removed it. After an application restart, Kraków remained absent, and the pulled database contained no Kraków rows in `tbl_city`, `tbl_weather` or `tbl_forecast` while the other cities kept theirs.
+- An Open-Meteo 503 reproduced from the host succeeded on the next attempt; after the retry change, city search and weather retrieval succeeded on the emulator.
 
 ## Limits
 

@@ -17,6 +17,19 @@ export class WeatherRepository {
   private localDataSource: IWeatherLocalDataSource;
   private locationProvider: ILocationProvider;
   private readonly FIFTEEN_MINUTES: number = 15 * 60 * 1000;
+  private cacheWrite: Promise<void> = Promise.resolve();
+  private cityGenerations: Map<number, number> = new Map<number, number>();
+
+  /** Serialize database mutations, without holding the queue during network requests. */
+  private writeCache(action: () => Promise<void>): Promise<void> {
+    const result = this.cacheWrite.then(action);
+    this.cacheWrite = result.catch(() => {});
+    return result;
+  }
+
+  private cityGeneration(cityId: number): number {
+    return this.cityGenerations.get(cityId) ?? 0;
+  }
 
   /**
    * Creates a new instance of WeatherRepository.
@@ -44,10 +57,11 @@ export class WeatherRepository {
     console.info(`[${LOG_TAG}] getWeatherData start for city: ${JSON.stringify(city)}`);
 
     console.debug(`[${LOG_TAG}] Ensuring city is saved locally (cityId=${city.place_id})`);
-    await this.saveCity(city);
+    const generation = this.cityGeneration(city.place_id);
+    await this.saveCity(city, generation);
 
     if (forceRefresh) {
-      return this.fetchAndSaveWeatherData(city);
+      return this.fetchAndSaveWeatherData(city, generation);
     }
 
     console.debug(`[${LOG_TAG}] Trying to get local data for cityId=${city.place_id}...`);
@@ -55,7 +69,7 @@ export class WeatherRepository {
 
     if (!localData || !localData.currentWeather || !localData.forecast) {
       console.warn(`[${LOG_TAG}] No local data (or incomplete). Will fetch fresh data from remote...`);
-      return this.fetchAndSaveWeatherData(city);
+      return this.fetchAndSaveWeatherData(city, generation);
     }
 
     console.debug(`[${LOG_TAG}] Local data found: ${JSON.stringify(localData)}`);
@@ -64,7 +78,7 @@ export class WeatherRepository {
     if (this.isDataObsolete(lastUpdated)) {
       console.warn(`[${LOG_TAG}] Local data is obsolete (lastUpdated=${lastUpdated}). Fetching new data...`);
       try {
-        return await this.fetchAndSaveWeatherData(city);
+        return await this.fetchAndSaveWeatherData(city, generation);
       } catch (error) {
         // Stale data remains useful when the network is unavailable.
         return localData;
@@ -81,7 +95,7 @@ export class WeatherRepository {
    * @param {City} city - The city for which to fetch data.
    * @returns {Promise<WeatherData>} A promise resolving to freshly fetched weather data.
    */
-  private async fetchAndSaveWeatherData(city: City): Promise<WeatherData> {
+  private async fetchAndSaveWeatherData(city: City, generation: number): Promise<WeatherData> {
     console.info(`[${LOG_TAG}] fetchAndSaveWeatherData -> fetching data from remote for cityId=${city.place_id}`);
 
     const [ currentWeather, forecast ] = await Promise.all([
@@ -94,7 +108,7 @@ export class WeatherRepository {
     console.debug(`[${LOG_TAG}] Received forecast: ${JSON.stringify(forecast)}`);
 
     console.info(`[${LOG_TAG}] Saving new weather data to local DB...`);
-    await this.saveWeatherData(city.place_id, currentWeather, forecast, lastUpdated);
+    await this.saveWeatherData(city.place_id, currentWeather, forecast, lastUpdated, generation);
 
     console.info(`[${LOG_TAG}] Returning newly fetched data for cityId=${city.place_id}`);
     return { currentWeather, forecast, lastUpdated };
@@ -127,6 +141,15 @@ export class WeatherRepository {
   async getSavedCities(): Promise<City[]> {
     console.info(`[${LOG_TAG}] getSavedCities -> returning all cities from local DB...`);
     return this.localDataSource.getAllCities();
+  }
+
+  async deleteSavedCity(city: City): Promise<void> {
+    if (!city || !Number.isFinite(city.place_id)) {
+      throw new AppError(1003, 'Invalid saved city.');
+    }
+    // Invalidate work started before this deletion, including requests still on the network.
+    this.cityGenerations.set(city.place_id, this.cityGeneration(city.place_id) + 1);
+    await this.writeCache(async () => { await this.localDataSource.deleteCity(city); });
   }
 
   /** Most recently retrieved complete weather, independent of city insertion order. */
@@ -169,9 +192,13 @@ export class WeatherRepository {
    * @param {City} city - The city object to be saved.
    * @returns {Promise<void>}
    */
-  async saveCity(city: City): Promise<void> {
+  async saveCity(city: City, generation: number = this.cityGeneration(city.place_id)): Promise<void> {
     console.debug(`[${LOG_TAG}] saveCity -> cityId=${city.place_id}, name=${city.name}`);
-    await this.localDataSource.saveCity(city);
+    await this.writeCache(async () => {
+      if (generation === this.cityGeneration(city.place_id)) {
+        await this.localDataSource.saveCity(city);
+      }
+    });
   }
 
   /**
@@ -186,10 +213,15 @@ export class WeatherRepository {
     cityId: number,
     currentWeather: CurrentWeather,
     forecast: Forecast,
-    lastUpdated: Date
+    lastUpdated: Date,
+    generation: number = this.cityGeneration(cityId)
   ): Promise<void> {
     console.debug(`[${LOG_TAG}] saveWeatherData -> cityId=${cityId}, lastUpdated=${lastUpdated}`);
-    await this.localDataSource.saveWeatherData(cityId, currentWeather, forecast, lastUpdated);
+    await this.writeCache(async () => {
+      if (generation === this.cityGeneration(cityId)) {
+        await this.localDataSource.saveWeatherData(cityId, currentWeather, forecast, lastUpdated);
+      }
+    });
   }
 
   /**

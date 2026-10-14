@@ -8,6 +8,8 @@ import { BaseRelationalDatabase } from '../db/BaseRelationalDatabase';
 import relationalStore from '@ohos.data.relationalStore';
 import { City } from '../../net/dto/WeatherDTO';
 import { cityToEntity, entityToRecord, resultSetToCities } from '../mapper/CityMapper';
+import { WeatherEntity } from '../entity/WeatherEntity';
+import { ForecastEntity } from '../entity/ForecastEntity';
 
 export class CityDAORdb implements ICityDAO {
   private db: BaseRelationalDatabase;
@@ -28,7 +30,7 @@ export class CityDAORdb implements ICityDAO {
     return this.db.query(
       CityEntity.getTableName(),
       CityEntity.getTableColumns(),
-      (predicates) => predicates,
+      (predicates) => predicates.orderByDesc('timestamp').orderByDesc('id'),
       (resultSet: relationalStore.ResultSet) => resultSetToCities(resultSet)
     );
   }
@@ -85,9 +87,11 @@ export class CityDAORdb implements ICityDAO {
    * @returns {Promise<number>} A promise that resolves to the number of rows deleted.
    */
   async deleteCity(city: City): Promise<number> {
-    return this.db.delete<CityEntity>(
-      CityEntity.getTableName(),
-      (predicates) => predicates.equalTo(CityEntity.getTableColumns()[0], city.place_id)
-    );
+    const rows = await this.db.deleteInTransaction([
+      new relationalStore.RdbPredicates(WeatherEntity.getTableName()).equalTo('city_id', city.place_id),
+      new relationalStore.RdbPredicates(ForecastEntity.getTableName()).equalTo('city_id', city.place_id),
+      new relationalStore.RdbPredicates(CityEntity.getTableName()).equalTo('id', city.place_id)
+    ]);
+    return rows[2];
   }
 }

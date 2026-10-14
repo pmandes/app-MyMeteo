@@ -1,4 +1,9 @@
-import { AppError, City, CityWeatherData, WeatherData, WeatherRepository } from '@mymeteo/data';
+import { AppError, City, CityWeatherData, CurrentWeather, WeatherData, WeatherRepository } from '@mymeteo/data';
+
+export interface SavedCityWeather {
+  cityId: number;
+  currentWeather: CurrentWeather;
+}
 
 export class WeatherViewModel {
   private repository?: WeatherRepository;
@@ -16,6 +21,27 @@ export class WeatherViewModel {
 
   async getSavedCities(): Promise<City[]> {
     return this.getRepository().getSavedCities();
+  }
+
+  async deleteSavedCity(city: City): Promise<void> {
+    await this.getRepository().deleteSavedCity(city);
+  }
+
+  /** History previews read only saved data, regardless of its age. */
+  async getSavedCityWeather(cities: City[]): Promise<SavedCityWeather[]> {
+    const saved: SavedCityWeather[] = [];
+    for (const city of cities) {
+      try {
+        const data = await this.getRepository().getSavedWeatherData(city.place_id);
+        if (data.currentWeather?.current) {
+          saved.push({ cityId: city.place_id, currentWeather: data.currentWeather });
+        }
+      } catch (error) {
+        // An absent or unreadable cache must not hide the saved city itself.
+        console.warn('Unable to read history weather for city ' + city.place_id);
+      }
+    }
+    return saved;
   }
 
   async searchCity(query: string): Promise<City[]> {
