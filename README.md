@@ -1040,11 +1040,14 @@ struct Index {
         } else if (this.viewState === ViewState.SHOW_CITY) {
           CityDetailsComponent({ city: this.selectedCity, currentWeather: this.currentWeather,
             forecast: this.forecast, updatedAt: this.updatedAt })
-        } else if (this.viewState === ViewState.LOADING) {
-          LoadingComponent()
         } else if (this.viewState === ViewState.ERROR) {
           ErrorComponent({ error: this.error })
         }
+      }
+
+      // The loader is centred on the whole screen, above the scrolling content.
+      if (this.viewState === ViewState.LOADING) {
+        LoadingComponent()
       }
 
       SearchBarComponent({ onSearch: (query: string) => this.searchCities(query) })

@@ -242,8 +242,6 @@ struct Index {
         } else if (this.viewState === ViewState.SHOW_CITY) {
           CityDetailsComponent({ city: this.selectedCity, currentWeather: this.currentWeather,
             forecast: this.forecast, updatedAt: this.updatedAt })
-        } else if (this.viewState === ViewState.LOADING) {
-          LoadingComponent()
         } else if (this.viewState === ViewState.ERROR) {
           ErrorComponent({ error: this.error })
         }
@@ -290,6 +288,11 @@ struct Index {
         .onRefreshing(() => { this.refreshWeather(); })
       } else {
         this.content()
+      }
+
+      // Centred on the whole screen rather than at the top of the scrolling content.
+      if (this.viewState === ViewState.LOADING) {
+        LoadingComponent()
       }
 
       Stack({ alignContent: Alignment.Top }) {
